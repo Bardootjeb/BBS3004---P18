@@ -1,19 +1,38 @@
-if (!requireNamespace("BiocManager", quietly = TRUE))
+# Welcome to our project. For the code to work, a set of packages have to be
+# installed. Follow the following commands to acquire the proper packages.
+
+# Check if BiocManager is installed; install it if not
+if (!requireNamespace("BiocManager")) {
   install.packages("BiocManager")
-BiocManager::install(c("DESeq2", "ggplot2", "dplyr", "pheatmap", 
-                       "clusterProfiler", "org.Hs.eg.db", "GEOquery"))
-install.packages("readr")  # For reading TSV files
+} else {
+  message("BiocManager is already installed")
+}
 
+# Create vector containing all the packages
+packages <- c("DESeq2", "ggplot2", "dplyr", "pheatmap", 
+"clusterProfiler", "org.Hs.eg.db", "GEOquery", "readr", "readxl")
 
-library(DESeq2)
-library(ggplot2)
-library(dplyr)
-library(pheatmap)
-library(clusterProfiler)
-library(org.Hs.eg.db)
-library(GEOquery)
-library(readr)  # For reading TSV files
-library(readxl) # For reading Excel (XLSX) files
+# Check if required packages is installed; install it if not
+if (!requireNamespace(packages)) {
+  BiocManager::install(packages)
+} else {
+  message("Packages are already installed")
+}
+
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+# Step 1. Preparatory Analysis
+
+# Source files and data
+source("Project.Functions.R")
+require(DESeq2)
+require(ggplot2)
+require(dplyr)
+require(pheatmap)
+require(clusterProfiler)
+require(org.Hs.eg.db)
+require(GEOquery)
+require(readr)  # For reading TSV files
+require(readxl) # For reading Excel (XLSX) files
 
 #load raw counts
 counts <- read_tsv("GSE81089_raw_counts_GRCh38.p13_NCBI.tsv")
