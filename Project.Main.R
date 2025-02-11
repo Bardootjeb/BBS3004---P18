@@ -35,16 +35,18 @@ require(readr)  # For reading TSV files
 require(readxl) # For reading Excel (XLSX) files
 
 #load raw counts
-counts <- read_tsv("GSE81089_raw_counts_GRCh38.p13_NCBI.tsv")
+counts <- read.delim("FPKM_cufflinks.tsv", header=TRUE, 
+                   row.names=1, sep="\t", check.names=FALSE)
+
 head(counts)
+
+# hoi
 
 #load metadata
 gse <- getGEO(GEO = 'GSE81089', GSEMatrix = TRUE)
 metadata <- pData(phenoData(gse[[1]]))
 head(metadata)
 colnames(metadata) # I did colnames to see the different colomns
-
-colnames(metadata1)
 
 metadata.subset <- metadata[, c(1, 48, 49, 50, 51, 52, 53, 54, 56)]
 head(metadata.subset)
