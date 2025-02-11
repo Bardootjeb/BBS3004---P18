@@ -44,22 +44,10 @@ metadata <- pData(phenoData(gse[[1]]))
 head(metadata)
 colnames(metadata) # I did colnames to see the different colomns
 
-<<<<<<< HEAD
 colnames(metadata1)
 
 metadata.subset <- metadata[, c(1, 48, 49, 50, 51, 52, 53, 54, 56)]
 head(metadata.subset)
-
-=======
-metadata.subset <- subset(metadata, c([1], 48, 49, 50, 51, 52, 53, 54, 56))
-head(metadata.subset)
-
-# =-=-=-=-=
-test <- matrix()
-test <- cbind(metadata, 1, 48, 49, 50, 51, 52, 53, 56)
-metadata.subset <- test
-# =-=-=-=-=
->>>>>>> b4d5cf2aa42cc7c5b84db92cef4f1ca3c2fbc830
 
 head(counts)
 setdiff(colnames(counts), rownames(metadata.subset))  # Check if sample names in counts are in metadata
