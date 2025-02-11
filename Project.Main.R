@@ -46,8 +46,9 @@ head(metadata)
 
 colnames(metadata1)
 
-metadata.subset <- select(metadata, c(1,48, 49, 50, 51, 52, 53, 54, 56))
+metadata.subset <- metadata[, c(1, 48, 49, 50, 51, 52, 53, 54, 56)]
 head(metadata.subset)
+
 
 head(counts)
 setdiff(colnames(counts), rownames(metadata.subset))  # Check if sample names in counts are in metadata
