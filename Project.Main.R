@@ -59,5 +59,8 @@ colnames(counts)
 dead <- metadata.subset[, 3]
 paste(dead)
 
-
+# Ensure the output directory exists
+if (!dir.exists("Output")) {
+  dir.create("Output")
+}
 
