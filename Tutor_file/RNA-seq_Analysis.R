@@ -116,9 +116,9 @@ ggplot(expression_long, aes(x = Sex, y = Expression, fill = Sex)) +
        y = "Expression Level") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
-#=======================================#
-# Differential Gene Expression Analysis #
-#=======================================#
+#===============================================#
+# Step 2. Differential Gene Expression Analysis #
+#===============================================#
  # Deseq2
 
 
