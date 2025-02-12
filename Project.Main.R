@@ -51,22 +51,8 @@ colnames(metadata) # I did colnames to see the different colomns
 metadata.subset <- metadata[, c(1, 48, 49, 50, 51, 52, 53, 54, 56)]
 head(metadata.subset)
 
-head(counts)
-setdiff(colnames(counts), rownames(metadata.subset))  # Check if sample names in counts are in metadata
+rownames(metadata) <- metadata$title
 
-setdiff(rownames(metadata.subset), colnames(counts))  # Check if sample names in metadata are in counts
-
-rownames(counts) <- counts[,1]  # Set first column (GeneID) as row names
-counts <- counts[,-1]  # Remove the GeneID column from data
-
-counts <- as.data.frame(counts)  # Convert tibble to a data frame
-head(counts)  # Verify if the first column is GeneID
-rownames(counts) <- counts[,1]  # Set the first column as row names
-counts <- counts[,-1]  # Remove the GeneID column from the data
-head(rownames(counts))  # Should display gene IDs
-colnames(counts)  # Should display sample names
-
-setdiff(colnames(counts), rownames(metadata))  # Should return character(0)
-setdiff(rownames(metadata), colnames(counts))  # Should return character(0)
+colnames(counts)
 
 
