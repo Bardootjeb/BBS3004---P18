@@ -48,7 +48,6 @@ metadata <- metadata %>%
 
 rownames(metadata) <- metadata$Sample
 
-
 # Check if the changes were applied
 head(metadata)
 #write.table(metadata, file ="metadata.tsv", sep = "\t", row.names = FALSE, quote = FALSE)
@@ -116,13 +115,57 @@ ggplot(expression_long, aes(x = Sex, y = Expression, fill = Sex)) +
        y = "Expression Level") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
-#===============================================#
-# Step 2. Differential Gene Expression Analysis #
-#===============================================#
+#=======================================#
+# Differential Gene Expression Analysis #
+#=======================================#
  # Deseq2
+# making sure the row names in metadata matches to column names in Data
+all(colnames(Data) %in% rownames(metadata))
 
+# Find Columns in Data That Are Not in metadata
+setdiff(colnames(Data), rownames(metadata))
 
+# Remove everything after the underscore in Data
+colnames(Data) <- sub("_.*", "", colnames(Data))
 
+# Check again if row names in metadata matches to column names in Data
+all(colnames(Data) %in% rownames(metadata))
 
+# Check if they are in the same order
+all(colnames(Data) == rownames(metadata))
 
+# Reorder metadata rows to match the column order in Data
+metadata <- metadata[match(colnames(Data), rownames(metadata)), , drop = FALSE]
+
+# Check if they now match
+all(colnames(Data) == rownames(metadata))
+
+# Check the values in the data
+summary(Data)
+
+# Convert all data values to Absolute values. (Non-negative)
+Data <- abs(Data)
+
+# Round values to integers
+Data <- round(Data)
+
+# Construct a DESeqDataSet object 
+dds <- DESeqDataSetFromMatrix(countData = Data,
+  colData = metadata,
+  design = ~ Source)
+
+dds
+
+# Quality control
+# Remove genes with low counts
+keep <- rowSums(counts(dds)) >= 10
+dds <- dds[keep,]
+
+keep2 <- rowMeans(counts(dds)) >=10
+dds <- dds[keep2,]
+
+dds
+# Choose one either rowmeans or rowsum
+
+# set the factor level
 
