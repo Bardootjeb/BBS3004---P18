@@ -49,21 +49,22 @@ head(metadata)
 # I did colnames to see the different colomns
 colnames(metadata) 
 # Create subset
-metadata.subset <- metadata[, c(1, 48, 49, 50, 51, 52, 53, 54, 56)]
-# What does this do??
-rownames(metadata) <- metadata$title
+metadata.subset <- metadata[, c(1, 8, 48, 49, 50, 51, 52, 53, 54, 56)]
 # Look at the different names
 colnames(counts)
 
 # Renaming the colnames to the appropriate names to make it more readable
 metadata.subset <- setNames(metadata.subset, c(
- "Title", "Age", "Life_Status", "Sex", "Histology", "Performance", 
- "Smoking_Status", "Tumor_stage", "Sample"
+  "Title", "Source", "Age", "Life_Status", "Sex", "Histology", "Performance", 
+  "Smoking_Status", "Tumor_stage", "Sample"
 )[match(names(metadata.subset), c(
-  "title", "age:ch1", "dead:ch1", "gender:ch1", "histology:ch1", "ps who:ch1", 
+  "title", "source_name_ch1", "age:ch1", "dead:ch1", "gender:ch1", "histology:ch1", "ps who:ch1", 
   "smoking:ch1", "stage tnm:ch1", "tumor (t) or normal (n):ch1" 
   
 ))])
+
+# Set column 'Sample' in metadata.subset as row names in metadata.subset (*to be able to match it later for deseq2 to column names of counts)
+rownames(metadata.subset) <- metadata.subset$Sample
 
 # Extract the deaths
 dead <- metadata.subset[, 3]
@@ -123,3 +124,61 @@ save.pdf(function(){
        y = "Expression Level") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))# Rotate sample labels
 }, "Sample Gene Expression Levels")
+
+
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+# Step 2. Differential Gene Expression Analysis
+
+# Making sure the row names in metadata.subset matches to column names in counts
+all(colnames(counts) %in% rownames(metadata.subset))
+
+# Find Columns in counts That Are Not in metadata.subset
+setdiff(colnames(counts), rownames(metadata.subset))
+
+# Remove everything after the underscore in counts
+colnames(counts) <- sub("_.*", "", colnames(counts))
+colnames(counts)    #check if it is removed
+
+# Check again if row names in metadata.subset matches to column names in counts
+all(colnames(counts) %in% rownames(metadata.subset))
+
+# Check if they are in the same order
+all(colnames(counts) == rownames(metadata.subset))
+
+# Reorder metadata.subset rows to match the column order in counts
+metadata.subset <- metadata.subset[match(colnames(counts), rownames(metadata.subset)), , drop = FALSE]
+
+# Check if they now match
+all(colnames(counts) == rownames(metadata.subset))
+
+# Check the values in the counts
+summary(counts)
+
+# Convert all data values to Absolute values. (Non-negative)
+Data <- abs(Data)
+
+# Round values to integers
+Data <- round(Data)
+
+# Construct a DESeqDataSet object 
+dds <- DESeqDataSetFromMatrix(countData = Data,
+                              colData = metadata,
+                              design = ~ Source)
+
+dds
+
+# Quality control
+# Remove genes with low counts (choose one)
+keep <- rowSums(counts(dds)) >= 10
+dds <- dds[keep,]
+
+keep2 <- rowMeans(counts(dds)) >=10
+dds <- dds[keep2,]
+
+dds
+
+
+# Set the factor level
+
+
+
