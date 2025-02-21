@@ -155,27 +155,24 @@ all(colnames(counts) == rownames(metadata.subset))
 summary(counts)
 
 # Convert all data values to Absolute values. (Non-negative)
-Data <- abs(Data)
+info <- abs(counts)
 
 # Round values to integers
-Data <- round(Data)
+info <- round(info)
 
 # Construct a DESeqDataSet object 
-dds <- DESeqDataSetFromMatrix(countData = Data,
-                              colData = metadata,
+dds <- DESeqDataSetFromMatrix(countData = info,
+                              colData = metadata.subset,
                               design = ~ Source)
 
-dds
+print(dds)
 
 # Quality control
 # Remove genes with low counts (choose one)
-keep <- rowSums(counts(dds)) >= 10
+keep <- rowMeans(counts(dds)) >=10
 dds <- dds[keep,]
 
-keep2 <- rowMeans(counts(dds)) >=10
-dds <- dds[keep2,]
-
-dds
+print(dds)
 
 
 # Set the factor level
