@@ -207,15 +207,25 @@ deg_genes <- res[which(res$padj < 0.05 & abs(res$log2FoldChange) > 1), ]
 # Save results to a CSV file for further analysis
 write.csv(as.data.frame(deg_genes), "Significant_DEGs.csv")
 
-#hhh
+#making plots
 
+# Convert results to a dataframe
+res_df <- as.data.frame(res)
 
+# Create a column for significance
+res_df$significance <- ifelse(res_df$padj < 0.05 & abs(res_df$log2FoldChange) > 1,
+                              ifelse(res_df$log2FoldChange > 1, "Upregulated", "Downregulated"),
+                              "Not Significant")
+print(res_df$significance)
 
-
-
-
-=======
->>>>>>> 03b65f49b650e997b5fb3ad0d4406937f5b84be4
+# Plot Volcano Plot
+ggplot(res_df, aes(x = log2FoldChange, y = -log10(padj), color = significance)) +
+  geom_point(alpha = 0.6) +
+  scale_color_manual(values = c("Upregulated" = "red", "Downregulated" = "blue", "Not Significant" = "grey")) +
+  theme_minimal() +
+  labs(title = "Volcano Plot of DEGs", x = "Log2 Fold Change", y = "-Log10 Adjusted P-Value") +
+  theme(legend.title = element_blank()
+        
 
 
 
