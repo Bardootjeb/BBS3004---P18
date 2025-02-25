@@ -201,12 +201,12 @@ summary(res)
 deg_genes <- res[which(res$padj < 0.05 & abs(res$log2FoldChange) > 1), ]
 
 # Check how many significant DEGs were found
-nrow(deg_genes)
+ nrow(deg_genes)
 
 # Save results to a CSV file for further analysis
 write.csv(as.data.frame(deg_genes), "Significant_DEGs.csv")
 
-#
+#hhh
 
 
 
