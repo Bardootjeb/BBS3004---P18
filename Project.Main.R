@@ -107,7 +107,7 @@ save.pdf(function(){
     facet_wrap(~ Gene, scales = "free_y") +
     coord_flip() +  # Flip x and y axes
     theme_minimal() +
-    labs(title = "Gene Expression Levels Across Samples",
+    labs(title = "Gene Expression Levels Across Samples 2",
          x = "Expression Level",
          y = "Sample")  # Swap x and y labels accordingly
 }, "Sample Gene Expression Levels")
@@ -129,33 +129,36 @@ save.pdf(function(){
 # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 # Step 2. Differential Gene Expression Analysis
 
+data <- read.delim("FPKM_cufflinks.tsv", header=TRUE, 
+                     row.names=1, sep="\t", check.names=FALSE)
+
 # Making sure the row names in metadata.subset matches to column names in counts
-all(colnames(counts) %in% rownames(metadata.subset))
+all(colnames(data) %in% rownames(metadata.subset))
 
 # Find Columns in counts That Are Not in metadata.subset
-setdiff(colnames(counts), rownames(metadata.subset))
+setdiff(colnames(data), rownames(metadata.subset))
 
 # Remove everything after the underscore in counts
-colnames(counts) <- sub("_.*", "", colnames(counts))
-colnames(counts)    #check if it is removed
+colnames(data) <- sub("_.*", "", colnames(data))
+colnames(data)    #check if it is removed
 
 # Check again if row names in metadata.subset matches to column names in counts
-all(colnames(counts) %in% rownames(metadata.subset))
+all(colnames(data) %in% rownames(metadata.subset))
 
 # Check if they are in the same order
-all(colnames(counts) == rownames(metadata.subset))
+all(colnames(data) == rownames(metadata.subset))
 
 # Reorder metadata.subset rows to match the column order in counts
-metadata.subset <- metadata.subset[match(colnames(counts), rownames(metadata.subset)), , drop = FALSE]
+metadata.subset <- metadata.subset[match(colnames(data), rownames(metadata.subset)), , drop = FALSE]
 
 # Check if they now match
-all(colnames(counts) == rownames(metadata.subset))
+all(colnames(data) == rownames(metadata.subset))
 
 # Check the values in the counts
-summary(counts)
+summary(data)
 
 # Convert all data values to Absolute values. (Non-negative)
-info <- abs(counts)
+info <- abs(data)
 
 # Round values to integers
 info <- round(info)
@@ -169,11 +172,10 @@ print(dds)
 
 # Quality control
 # Remove genes with low counts (choose one)
-keep <- rowMeans(counts(dds)) >=10
+keep <- rowMeans(data(dds)) >=10
 dds <- dds[keep,]
 
 print(dds)
-
 
 # Set the factor level
 class(metadata.subset$Source)  # Check if it's "character" or "factor"
@@ -183,7 +185,6 @@ levels(metadata.subset$Source)
 
 #sets the human non-malignant tissue as the base for when comparing
 metadata.subset$Source <- relevel(metadata.subset$Source, ref = "Human non-malignant tissue")
-
 
 # Run the DESeq2 differential expression analysis
 dds <- DESeq(dds)
@@ -201,18 +202,34 @@ summary(res)
 deg_genes <- res[which(res$padj < 0.05 & abs(res$log2FoldChange) > 1), ]
 
 # Check how many significant DEGs were found
-nrow(deg_genes)
+ nrow(deg_genes)
 
 # Save results to a CSV file for further analysis
 write.csv(as.data.frame(deg_genes), "Significant_DEGs.csv")
 
-#
+<<<<<<< HEAD
+#hhh
+=======
+#making plots
 
+# Convert results to a dataframe
+res_df <- as.data.frame(res)
 
+# Create a column for significance
+res_df$significance <- ifelse(res_df$padj < 0.05 & abs(res_df$log2FoldChange) > 1,
+                              ifelse(res_df$log2FoldChange > 1, "Upregulated", "Downregulated"),
+                              "Not Significant")
+print(res_df$significance)
 
-
-
-
+# Plot Volcano Plot
+ggplot(res_df, aes(x = log2FoldChange, y = -log10(padj), color = significance)) +
+  geom_point(alpha = 0.6) +
+  scale_color_manual(values = c("Upregulated" = "red", "Downregulated" = "blue", "Not Significant" = "grey")) +
+  theme_minimal() +
+  labs(title = "Volcano Plot of DEGs", x = "Log2 Fold Change", y = "-Log10 Adjusted P-Value") +
+  theme(legend.title = element_blank()
+        
+>>>>>>> d0d42394a7bcf53e426dc6c7e42db1a73487a68e
 
 
 
