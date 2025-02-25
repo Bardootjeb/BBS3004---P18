@@ -174,9 +174,7 @@ dds <- dds[keep,]
 
 print(dds)
 
-
 # Set the factor level
-<<<<<<< HEAD
 class(metadata.subset$Source)  # Check if it's "character" or "factor"
 metadata.subset$Source <- as.factor(metadata.subset$Source)
 class(metadata.subset$Source)  # Should now be "factor"
@@ -184,7 +182,6 @@ levels(metadata.subset$Source)
 
 #sets the human non-malignant tissue as the base for when comparing
 metadata.subset$Source <- relevel(metadata.subset$Source, ref = "Human non-malignant tissue")
-
 
 # Run the DESeq2 differential expression analysis
 dds <- DESeq(dds)
@@ -208,14 +205,6 @@ deg_genes <- res[which(res$padj < 0.05 & abs(res$log2FoldChange) > 1), ]
 write.csv(as.data.frame(deg_genes), "Significant_DEGs.csv")
 
 #hhh
-
-
-
-
-
-
-=======
->>>>>>> 03b65f49b650e997b5fb3ad0d4406937f5b84be4
 
 
 
