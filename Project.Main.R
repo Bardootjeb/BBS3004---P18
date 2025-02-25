@@ -107,7 +107,7 @@ save.pdf(function(){
     facet_wrap(~ Gene, scales = "free_y") +
     coord_flip() +  # Flip x and y axes
     theme_minimal() +
-    labs(title = "Gene Expression Levels Across Samples",
+    labs(title = "Gene Expression Levels Across Samples 2",
          x = "Expression Level",
          y = "Sample")  # Swap x and y labels accordingly
 }, "Sample Gene Expression Levels")
@@ -176,6 +176,7 @@ print(dds)
 
 
 # Set the factor level
+<<<<<<< HEAD
 class(metadata.subset$Source)  # Check if it's "character" or "factor"
 metadata.subset$Source <- as.factor(metadata.subset$Source)
 class(metadata.subset$Source)  # Should now be "factor"
@@ -213,6 +214,8 @@ write.csv(as.data.frame(deg_genes), "Significant_DEGs.csv")
 
 
 
+=======
+>>>>>>> 03b65f49b650e997b5fb3ad0d4406937f5b84be4
 
 
 
