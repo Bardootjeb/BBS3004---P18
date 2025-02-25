@@ -129,33 +129,36 @@ save.pdf(function(){
 # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 # Step 2. Differential Gene Expression Analysis
 
+data <- read.delim("FPKM_cufflinks.tsv", header=TRUE, 
+                     row.names=1, sep="\t", check.names=FALSE)
+
 # Making sure the row names in metadata.subset matches to column names in counts
-all(colnames(counts) %in% rownames(metadata.subset))
+all(colnames(data) %in% rownames(metadata.subset))
 
 # Find Columns in counts That Are Not in metadata.subset
-setdiff(colnames(counts), rownames(metadata.subset))
+setdiff(colnames(data), rownames(metadata.subset))
 
 # Remove everything after the underscore in counts
-colnames(counts) <- sub("_.*", "", colnames(counts))
-colnames(counts)    #check if it is removed
+colnames(data) <- sub("_.*", "", colnames(data))
+colnames(data)    #check if it is removed
 
 # Check again if row names in metadata.subset matches to column names in counts
-all(colnames(counts) %in% rownames(metadata.subset))
+all(colnames(data) %in% rownames(metadata.subset))
 
 # Check if they are in the same order
-all(colnames(counts) == rownames(metadata.subset))
+all(colnames(data) == rownames(metadata.subset))
 
 # Reorder metadata.subset rows to match the column order in counts
-metadata.subset <- metadata.subset[match(colnames(counts), rownames(metadata.subset)), , drop = FALSE]
+metadata.subset <- metadata.subset[match(colnames(data), rownames(metadata.subset)), , drop = FALSE]
 
 # Check if they now match
-all(colnames(counts) == rownames(metadata.subset))
+all(colnames(data) == rownames(metadata.subset))
 
 # Check the values in the counts
-summary(counts)
+summary(data)
 
 # Convert all data values to Absolute values. (Non-negative)
-info <- abs(counts)
+info <- abs(data)
 
 # Round values to integers
 info <- round(info)
@@ -169,7 +172,7 @@ print(dds)
 
 # Quality control
 # Remove genes with low counts (choose one)
-keep <- rowMeans(counts(dds)) >=10
+keep <- rowMeans(data(dds)) >=10
 dds <- dds[keep,]
 
 print(dds)
