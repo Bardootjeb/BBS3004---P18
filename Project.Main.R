@@ -107,7 +107,7 @@ save.pdf(function(){
     facet_wrap(~ Gene, scales = "free_y") +
     coord_flip() +  # Flip x and y axes
     theme_minimal() +
-    labs(title = "Gene Expression Levels Across Samples",
+    labs(title = "Gene Expression Levels Across Samples 2",
          x = "Expression Level",
          y = "Sample")  # Swap x and y labels accordingly
 }, "Sample Gene Expression Levels")
@@ -176,43 +176,6 @@ print(dds)
 
 
 # Set the factor level
-class(metadata.subset$Source)  # Check if it's "character" or "factor"
-metadata.subset$Source <- as.factor(metadata.subset$Source)
-class(metadata.subset$Source)  # Should now be "factor"
-levels(metadata.subset$Source)
-
-#sets the human non-malignant tissue as the base for when comparing
-metadata.subset$Source <- relevel(metadata.subset$Source, ref = "Human non-malignant tissue")
-
-
-# Run the DESeq2 differential expression analysis
-dds <- DESeq(dds)
-
-# Print a summary of DESeq2 results
-print(dds)
-
-# Extract results for Malignant Tissue vs. Human Tissue
-res <- results(dds, contrast = c("Source", "Human non-malignant tissue", "Human NSCLC tissue" ))
-
-# View a summary of the results
-summary(res)
-
-# Filter for genes with padj < 0.05 (statistically significant) and log2FoldChange > 1 or < -1 (biologically meaningful)
-deg_genes <- res[which(res$padj < 0.05 & abs(res$log2FoldChange) > 1), ]
-
-# Check how many significant DEGs were found
-nrow(deg_genes)
-
-# Save results to a CSV file for further analysis
-write.csv(as.data.frame(deg_genes), "Significant_DEGs.csv")
-
-#
-
-
-
-
-
-
 
 
 
