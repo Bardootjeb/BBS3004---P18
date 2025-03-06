@@ -5,6 +5,7 @@ library(DESeq2)
 library(dplyr)
 library(tidyverse)
 library(GEOquery)
+library(forcats)
 
 # Set your working Directory
 setwd("Research/PhD/Education/2025/BBS3004/Data/")
@@ -13,20 +14,18 @@ setwd("Research/PhD/Education/2025/BBS3004/Data/")
 # Step 1. Import Data & metadata into R #
 #=======================================#
 
+# This first part of the analysis uses FPKM normalised data
+
 # Load your Data
-Data <- read.delim("GSE81089_FPKM_cufflinks.tsv", header=TRUE, row.names=1, sep="\t", check.names = FALSE)
+FPKM_Data <- read.delim("GSE81089_FPKM_cufflinks.tsv", header=TRUE, row.names=1, sep="\t", check.names = FALSE)
 
 # get metadata 
 gse <- getGEO(GEO = 'GSE81089', GSEMatrix = TRUE)
 metadata <- pData(phenoData(gse[[1]]))
 head(metadata)  # Have a glimpse of how metadata looks like
 
-# Increase buffer size by setting `Sys.setenv("VROOM_CONNECTION_SIZE")`
-#Sys.setenv("VROOM_CONNECTION_SIZE" = 131072 * 1000)
-
 # Rename columns in metadata
 colnames(metadata)
-#write.table(metadata, file ="metadata.tsv", sep = "\t", row.names = FALSE, quote = FALSE)
 
 metadata <- metadata %>%
   rename(
@@ -40,7 +39,7 @@ metadata <- metadata %>%
   )
 
 # Check updated column names
-print(colnames(metadata))
+colnames(metadata)
 
 # Select only the renamed columns and overwrite metadata
 metadata <- metadata %>%
@@ -50,25 +49,40 @@ rownames(metadata) <- metadata$Sample
 
 # Check if the changes were applied
 head(metadata)
-#write.table(metadata, file ="metadata.tsv", sep = "\t", row.names = FALSE, quote = FALSE)
 
 # Remove the last row from Data
-head(Data)
-dim(Data)
-Data <- Data[-nrow(Data), ]
+head(FPKM_Data)
+dim(FPKM_Data)
+FPKM_Data <- FPKM_Data[-nrow(FPKM_Data), ]
 
 # Check if the last row is removed
-dim(Data)  # Check new dimensions
+dim(FPKM_Data)  # Check new dimensions
 
 # Explore Visualization of the data
 # Perform quick visualization of known lung cancer genes:
 # EGFR, KRAS, MET, LKB1, BRAF, PIK3CA, ALK, RET, and ROS1
 
+# Making sure the row names in metadata matches to column names in FPKM_Data
+all(colnames(FPKM_Data) %in% rownames(metadata))
+
+# Find Columns in Data That Are Not in metadata
+setdiff(colnames(FPKM_Data), rownames(metadata))
+
+# Remove everything after the underscore in Data
+colnames(FPKM_Data) <- sub("_.*", "", colnames(FPKM_Data))
+
+# Check again if row names in metadata matches to column names in Data
+all(colnames(FPKM_Data) %in% rownames(metadata))
+
+# Replace NA values with "Control" in metadata
+metadata <- metadata %>%
+  mutate(across(everything(), ~replace_na(.x, "Control")))
+
 # Define the genes of interest
 genes_of_interest <- c("ENSG00000146648", "ENSG00000133703", "ENSG00000157764")
 
 # Convert Data to a long format (genes in rows, samples in columns)
-expression_long <- Data %>%
+expression_long <- FPKM_Data %>%
   as.data.frame() %>%
   rownames_to_column("Gene") %>%
   filter(Gene %in% genes_of_interest) %>%
@@ -79,7 +93,7 @@ expression_long <- expression_long %>%
   left_join(metadata, by = "Sample")
 
 # View the structure of the transformed data
-print(head(expression_long))
+head(expression_long)
 
 # Plot expression levels of selected genes
 ggplot(expression_long, aes(x = Sample, y = Expression, fill = Gene)) +
@@ -91,8 +105,7 @@ ggplot(expression_long, aes(x = Sample, y = Expression, fill = Gene)) +
        y = "Expression Level") +
   theme(axis.text.x = element_text(angle = 90, hjust = 1))  # Rotate sample labels
 
-
-# Boxplot of gene expression by sex
+# Boxplot of gene expression grouped by sex
 ggplot(expression_long, aes(x = Sex, y = Expression, fill = Sex)) +
   geom_boxplot(alpha = 0.7, outlier.shape = NA) +  # Transparent boxplot
   geom_jitter(width = 0.2, alpha = 0.6) +  # Adds individual points for visibility
@@ -115,42 +128,30 @@ ggplot(expression_long, aes(x = Sex, y = Expression, fill = Sex)) +
        y = "Expression Level") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
-#=======================================#
-# Differential Gene Expression Analysis #
-#=======================================#
+#==========================================================#
+# Differential Gene Expression Analysis (A.K.A DEG Anaysis)#
+#==========================================================#
  # Deseq2
-# making sure the row names in metadata matches to column names in Data
-all(colnames(Data) %in% rownames(metadata))
+# Load Raw counts file
+Counts <- read.delim("Raw_Counts_GSE81089.tsv", header=TRUE, row.names=1, sep="\t", check.names = FALSE)
 
-# Find Columns in Data That Are Not in metadata
-setdiff(colnames(Data), rownames(metadata))
-
-# Remove everything after the underscore in Data
-colnames(Data) <- sub("_.*", "", colnames(Data))
-
-# Check again if row names in metadata matches to column names in Data
-all(colnames(Data) %in% rownames(metadata))
+# making sure the row names in metadata matches to column names in Counts
+all(colnames(Counts) %in% rownames(metadata))
 
 # Check if they are in the same order
-all(colnames(Data) == rownames(metadata))
+all(colnames(Counts) == rownames(metadata))
 
-# Reorder metadata rows to match the column order in Data
-metadata <- metadata[match(colnames(Data), rownames(metadata)), , drop = FALSE]
+# Reorder metadata rows to match the column order in Counts
+metadata <- metadata[match(colnames(Counts), rownames(metadata)), , drop = FALSE]
 
 # Check if they now match
-all(colnames(Data) == rownames(metadata))
+all(colnames(Counts) == rownames(metadata))
 
-# Check the values in the data
-summary(Data)
-
-# Convert all data values to Absolute values. (Non-negative)
-Data <- abs(Data)
-
-# Round values to integers
-Data <- round(Data)
+# Check the values in the Counts file
+summary(Counts)
 
 # Construct a DESeqDataSet object 
-dds <- DESeqDataSetFromMatrix(countData = Data,
+dds <- DESeqDataSetFromMatrix(countData = Counts,
   colData = metadata,
   design = ~ Source)
 
@@ -158,14 +159,19 @@ dds
 
 # Quality control
 # Remove genes with low counts
-keep <- rowSums(counts(dds)) >= 10
+keep <- rowMeans(counts(dds)) >=10
 dds <- dds[keep,]
-
-keep2 <- rowMeans(counts(dds)) >=10
-dds <- dds[keep2,]
-
 dds
 # Choose one either rowmeans or rowsum
 
 # set the factor level
+dds$Source <- relevel(dds$Source, ref = "Human non-malignant tissue")
 
+# Run DESeq 
+dds <- DESeq(dds)
+res <- results(dds)
+
+res
+
+summary(res)
+plotMA(res)
