@@ -153,7 +153,7 @@ print(dds)
 
 # Quality control
 # Remove genes with low counts
-keep <- rowMeans(data(dds)) >=10
+keep <- rowMeans(counts(dds)) >=10
 dds <- dds[keep,]
 
 print(dds)
