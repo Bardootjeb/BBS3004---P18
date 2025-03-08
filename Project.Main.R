@@ -33,16 +33,16 @@ require(org.Hs.eg.db)
 require(GEOquery)
 
 
-#load raw counts
-counts <- read.delim("FPKM_cufflinks.tsv", header=TRUE, 
+# Load FPKM normalized data 
+FPKM_data <- read.delim("FPKM_cufflinks.tsv", header=TRUE, 
                    row.names=1, sep="\t", check.names=FALSE)
 
 # Looking at the head counts to see the type of data inside
-head(counts)
+head(FPKM_data)
 
-#load metadata using the getGEO function
+# Load metadata using the getGEO function
 gse <- getGEO(GEO = 'GSE81089', GSEMatrix = TRUE)
-#Extract metadata using pData function
+# Extract metadata using pData function
 metadata <- pData(phenoData(gse[[1]]))
 # Look at the data inside. Head gives you the first 6
 head(metadata)
@@ -51,7 +51,7 @@ colnames(metadata)
 # Create subset
 metadata.subset <- metadata[, c(1, 8, 48, 49, 50, 51, 52, 53, 54, 56)]
 # Look at the different names
-colnames(counts)
+colnames(FPKM_data)
 
 # Renaming the colnames to the appropriate names to make it more readable
 metadata.subset <- setNames(metadata.subset, c(
@@ -66,13 +66,13 @@ metadata.subset <- setNames(metadata.subset, c(
 # Set column 'Sample' in metadata.subset as row names in metadata.subset (*to be able to match it later for deseq2 to column names of counts)
 rownames(metadata.subset) <- metadata.subset$Sample
 
-# Remove the last row from Data
-head(counts)
-dim(counts)
-counts <- counts[-nrow(counts), ]
+# Remove the last row from FPKM_data
+head(FPKM_data)
+dim(FPKM_data)
+FPKM_data <- FPKM_data[-nrow(FPKM_data), ]
 
 # Check if the last row is removed
-dim(counts)  # Check new dimensions
+dim(FPKM_data)  # Check new dimensions
 
 # Ensure the output directory exists
 if (!dir.exists("Output")) {
@@ -83,7 +83,7 @@ if (!dir.exists("Output")) {
 interest.genes <- c("ENSG00000157764", "ENSG00000133703")
 
 # Subset our genes of interest into new df by filtering on columns
-express <- counts[rownames(counts) %in% interest.genes, , drop = FALSE]
+express <- FPKM_data[rownames(FPKM_data) %in% interest.genes, , drop = FALSE]
 
 # Convert the data into data frame
 express <- as.data.frame(express)
@@ -125,50 +125,35 @@ save.pdf(function(){
 # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 # Step 2. Differential Gene Expression Analysis
 
-data <- read.delim("FPKM_cufflinks.tsv", header=TRUE, 
+# Load the raw counts 
+raw_counts <- read.delim("Raw_Counts_GSE81089.tsv", header=TRUE, 
                      row.names=1, sep="\t", check.names=FALSE)
 
-# Making sure the row names in metadata.subset matches to column names in counts
-all(colnames(data) %in% rownames(metadata.subset))
-
-# Find Columns in counts That Are Not in metadata.subset
-setdiff(colnames(data), rownames(metadata.subset))
-
-# Remove everything after the underscore in counts
-colnames(data) <- sub("_.*", "", colnames(data))
-colnames(data)    #check if it is removed
-
-# Check again if row names in metadata.subset matches to column names in counts
-all(colnames(data) %in% rownames(metadata.subset))
+# Making sure the row names in metadata.subset matches to column names in raw_counts
+all(colnames(raw_counts) %in% rownames(metadata.subset))
 
 # Check if they are in the same order
-all(colnames(data) == rownames(metadata.subset))
+all(colnames(raw_counts) == rownames(metadata.subset))
 
-# Reorder metadata.subset rows to match the column order in counts
-metadata.subset <- metadata.subset[match(colnames(data), rownames(metadata.subset)), , drop = FALSE]
+# Reorder metadata.subset rows to match the column order in raw_counts
+metadata.subset <- metadata.subset[match(colnames(raw_counts), rownames(metadata.subset)), , drop = FALSE]
 
 # Check if they now match
-all(colnames(data) == rownames(metadata.subset))
+all(colnames(raw_counts) == rownames(metadata.subset))
 
-# Check the values in the counts
-summary(data)
-
-# Convert all data values to Absolute values. (Non-negative)
-info <- abs(data)
-
-# Round values to integers
-info <- round(info)
+# Check the values in the raw counts
+summary(raw_counts)
 
 # Construct a DESeqDataSet object 
-dds <- DESeqDataSetFromMatrix(countData = info,
+dds <- DESeqDataSetFromMatrix(countData = raw_counts,
                               colData = metadata.subset,
                               design = ~ Source)
 
 print(dds)
 
 # Quality control
-# Remove genes with low counts (choose one)
-keep <- rowMeans(data(dds)) >=10
+# Remove genes with low counts
+keep <- rowMeans(counts(dds)) >=10
 dds <- dds[keep,]
 
 print(dds)
@@ -179,7 +164,7 @@ metadata.subset$Source <- as.factor(metadata.subset$Source)
 class(metadata.subset$Source)  # Should now be "factor"
 levels(metadata.subset$Source)
 
-#sets the human non-malignant tissue as the base for when comparing
+# Sets the human non-malignant tissue as the base for when comparing
 metadata.subset$Source <- relevel(metadata.subset$Source, ref = "Human non-malignant tissue")
 
 # Run the DESeq2 differential expression analysis
@@ -218,7 +203,6 @@ res_df$significance <- ifelse(res_df$padj < 0.05 & abs(res_df$log2FoldChange) > 
 print(res_df$significance)
 
 # Plot Volcano Plot
-
 save.pdf(function(){
 ggplot(res_df, aes(x = log2FoldChange, y = -log10(padj), color = significance)) +
   geom_point(alpha = 0.6) +
