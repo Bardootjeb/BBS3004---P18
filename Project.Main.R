@@ -179,17 +179,15 @@ res <- results(dds, contrast = c("Source", "Human non-malignant tissue", "Human 
 # View a summary of the results
 summary(res)
 
-# Filter for genes with padj < 0.05 (statistically significant) and log2FoldChange > 1 or < -1 (biologically meaningful)
-deg_genes <- res[which(res$padj < 0.05 & abs(res$log2FoldChange) > 1), ]
+# Filter for genes with padj < 0.01 (statistically significant) and log2FoldChange > 1 or < -1 (biologically meaningful)
+deg_genes <- res[which(res$padj < 0.01 & abs(res$log2FoldChange) > 1), ]
 
 # Check how many significant DEGs were found
  nrow(deg_genes)
 
-# Save results to a CSV file for further analysis
-write.csv(as.data.frame(deg_genes), "Significant_DEGs.csv")
+# Save results to a TSV file for further analysis
+write.table(deg_genes, file= "Significant_DEGs.tsv", sep = "\t", col.names = F)
 
-
-#hhh
 
 #making plots
 
@@ -197,7 +195,7 @@ write.csv(as.data.frame(deg_genes), "Significant_DEGs.csv")
 res_df <- as.data.frame(res)
 
 # Create a column for significance
-res_df$significance <- ifelse(res_df$padj < 0.05 & abs(res_df$log2FoldChange) > 1,
+res_df$significance <- ifelse(res_df$padj < 0.01 & abs(res_df$log2FoldChange) > 1,
                               ifelse(res_df$log2FoldChange > 1, "Upregulated", "Downregulated"),
                               "Not Significant")
 print(res_df$significance)
@@ -213,5 +211,6 @@ ggplot(res_df, aes(x = log2FoldChange, y = -log10(padj), color = significance)) 
 }, "Volcano Plot")
 
 
+# Construct a DESeqDataSet object for specific variable (age, gender, smoking_status etc)
 
 
