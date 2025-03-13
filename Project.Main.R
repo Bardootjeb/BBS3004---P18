@@ -31,6 +31,7 @@ require(pheatmap)
 require(clusterProfiler)
 require(org.Hs.eg.db)
 require(GEOquery)
+library(tidyverse)
 
 
 # Load FPKM normalized data 
@@ -207,9 +208,6 @@ deg_genes <- res[which(res$padj < 0.01 & abs(res$log2FoldChange) > 1), ]
 
 # Save results to a TSV file for further analysis
 write.table(deg_genes, file= "Significant_DEGs.tsv", sep = "\t", col.names = F)
-
-
-#making plots
 
 # Convert results to a dataframe
 res_df <- as.data.frame(res)
