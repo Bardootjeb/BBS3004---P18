@@ -109,6 +109,19 @@ save.pdf(function(){
 }, "Sample Gene Expression Levels")
 
 
+ggplot(expression, aes(x = Sample, y = Expression, fill = Gene)) +
+  geom_col(position = "dodge") +
+  facet_wrap(~ Gene, scales = "free_y") +
+  coord_flip() +  # Flip x and y axes
+  theme_minimal() +
+  theme(axis.text.y = element_text(size = 8)) +  # Reduce y-axis label size
+  labs(title = "Gene Expression Levels Across Samples 2",
+       x = "Expression Level",
+       y = "Sample")  # Swap x and y labels accordingly
+}, "Sample Gene Expression Levels")
+
+
+
 # Plot expression levels of selected genes
 save.pdf(function(){
   ggplot(expression, aes(x = Sample, y = Expression, fill = Gene)) +
