@@ -238,13 +238,10 @@ ggplot(res_df, aes(x = log2FoldChange, y = -log10(padj), color = significance)) 
 #Step 3 DESeq2 for every variable
 #=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= 
 
-# General steps everyone still needs to do:
-install.packages("tidyr")  # Install if you haven't
-library(tidyr)  # Load the package
-
 # Replace NA values with "Control" in metadata
 metadata.subset<- metadata.subset%>%
   mutate(across(everything(), ~replace_na(.x, "Control"))) 
+
 
 # DESeq2 for smoking - Anne fleur
 # 1. change variables from chracters to factors for 'smoking status' (or gender etc.) 
@@ -281,11 +278,38 @@ write.table(DEGs_never_vs_current, file= "DEGs_never_vs_current.tsv", sep = "\t"
 # 9. Making a plot 
 
 
+
+# DESeq 2 for histology - Silke
+# 1. change variables from characters to factors for 'histology' 
+metadata.subset$Histology <- as.factor(metadata.subset$Histology)
+
+# 2. Construct a DESeqDataSet object
+dds_histology <- DESeqDataSetFromMatrix(countData = raw_counts,
+                                      colData = metadata.subset,
+                                      design = ~ Histology)
+
+# 3. Quality control - Remove genes with low counts
+keep <- rowMeans(counts(dds_histology) >=10
+dds_histology <- dds_histology[keep,]
+                 
+# 4. Set 'control' as the Reference
+dds_histology$Histology <- relevel(dds_histology$Histology, ref = "Control")
+                 
+# 5. Run DESeq2
+dds_histology <- DESeq(dds_histology) 
+
+# 6. Extract DEGs for groups: current smokers, ex smokers, never smokers 
+# 7. Extract DEGs within each comparison individually
+# 8. Save to TSV              
+
+
+
+
 # DESeq 2 for tumor stage - Sabya
-# change variables from chracters to factors for tumor
+# 1. change variables from chracters to factors for tumor
 metadata.subset$Tumor_stage <- as.factor(metadata.subset$Tumor_stage)
 
-# make deseq set for Tumor_stage
+# 2. construct deseq set for Tumor_stage
 dds_Tumorstage <- DESeqDataSetFromMatrix(countData = raw_counts,
                               colData = metadata.subset,
                               design = ~ Tumor_stage)
