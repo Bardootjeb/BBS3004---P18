@@ -224,8 +224,10 @@ ggplot(res_df, aes(x = log2FoldChange, y = -log10(padj), color = significance)) 
 }, "Volcano Plot")
 
 
-# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-#deseq for tumor_stage
+#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#Step 3 dese2 for every variable
+#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= 
+
 install.packages("tidyr")  # Install if you haven't
 library(tidyr)  # Load the package
 
@@ -233,8 +235,10 @@ library(tidyr)  # Load the package
 metadata.subset<- metadata.subset%>%
   mutate(across(everything(), ~replace_na(.x, "Control"))) 
 
+
+#deseq tumor stage Sabya
 # change variables from chracters to factors for tumor
-metadata.subset$Tumor_stage <- as.factor(metadata.subset$Source)
+metadata.subset$Tumor_stage <- as.factor(metadata.subset$Tumor_stage)
 
 # make deseq set for Tumor_stage
 dds_Tumorstage <- DESeqDataSetFromMatrix(countData = raw_counts,
@@ -246,3 +250,8 @@ keep <- rowMeans(counts(dds)) >=10
 dds <- dds[keep,]
 
 dds_Tumorstage <- DESeq(dds)
+
+
+
+
+
