@@ -97,17 +97,20 @@ express<- reshape2::melt(express, id.vars = "Gene", variable.name = "Sample",
 expression <- merge(express, metadata.subset, by = "Sample", all.x = TRUE)
 
 # Plot expression levels of selected genes
-save.pdf(function(){
-  ggplot(expression, aes(x = Expression , y = Sample , fill = Gene)) +
-  geom_bar(stat = "identity", position = "dodge") +
-  facet_wrap(~ Gene, scales = "free_y") +  # Separate plots per gene
-  theme_minimal() +
-  labs(title = "Gene Expression Levels Across Samples", 
-       x = "Sample",
-       y = "Expression Level") +
-  theme(axis.text.x = element_text(hjust = 1, size = 8))# Rotate sample labels
-}, "Sample Gene Expression Levels") 
 
+
+gene_colors <- c("pink", "lightblue", "lightgreen")  #create colour data
+names(gene_colors) <- interest.genes  #assign a colour to each gene of interest
+
+for(i in interest.genes){eplot <- ggplot(expression %>% filter(Gene == i), aes(x = Sample, y = Expression, fill = Gene)) +
+  geom_col(position = "dodge", fill = gene_colors[i]) +
+  facet_wrap(~ Gene, scales = "free_y") +
+  coord_flip() +  # Flip x and y axes
+  theme_minimal() +
+  labs(title = "Gene Expression Levels Across Samples 2",
+       x = "Expression Level",
+       y = "Sample") 
+print(eplot)}
 
 # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-=
 # Step 2. Differential Gene Expression Analysis
