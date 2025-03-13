@@ -80,7 +80,7 @@ if (!dir.exists("Output")) {
 }
 
 # Select our the genes of interest
-interest.genes <- c("ENSG00000157764", "ENSG00000133703")
+interest.genes <- c("ENSG00000157764", "ENSG00000133703", "ENSG00000146648")
 
 # Subset our genes of interest into new df by filtering on columns
 express <- FPKM_data[rownames(FPKM_data) %in% interest.genes, , drop = FALSE]
@@ -98,44 +98,18 @@ expression <- merge(express, metadata.subset, by = "Sample", all.x = TRUE)
 
 # Plot expression levels of selected genes
 save.pdf(function(){
-  ggplot(expression, aes(x = Sample, y = Expression, fill = Gene)) +
-    geom_col(position = "dodge") +
-    facet_wrap(~ Gene, scales = "free_y") +
-    coord_flip() +  # Flip x and y axes
-    theme_minimal() +
-    labs(title = "Gene Expression Levels Across Samples 2",
-         x = "Expression Level",
-         y = "Sample")  # Swap x and y labels accordingly
-}, "Sample Gene Expression Levels")
-
-
-ggplot(expression, aes(x = Sample, y = Expression, fill = Gene)) +
-  geom_col(position = "dodge") +
-  facet_wrap(~ Gene, scales = "free_y") +
-  coord_flip() +  # Flip x and y axes
-  theme_minimal() +
-  theme(axis.text.y = element_text(size = 8)) +  # Reduce y-axis label size
-  labs(title = "Gene Expression Levels Across Samples 2",
-       x = "Expression Level",
-       y = "Sample")  # Swap x and y labels accordingly
-}, "Sample Gene Expression Levels")
-
-
-
-# Plot expression levels of selected genes
-save.pdf(function(){
-  ggplot(expression, aes(x = Sample, y = Expression, fill = Gene)) +
+  ggplot(expression, aes(x = Expression , y = Sample , fill = Gene)) +
   geom_bar(stat = "identity", position = "dodge") +
   facet_wrap(~ Gene, scales = "free_y") +  # Separate plots per gene
   theme_minimal() +
-  labs(title = "Gene Expression Levels Across Samples",
+  labs(title = "Gene Expression Levels Across Samples", 
        x = "Sample",
        y = "Expression Level") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))# Rotate sample labels
-}, "Sample Gene Expression Levels")
+  theme(axis.text.x = element_text(hjust = 1, size = 8))# Rotate sample labels
+}, "Sample Gene Expression Levels") 
 
 
-# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-=
 # Step 2. Differential Gene Expression Analysis
 
 # Load the raw counts 
