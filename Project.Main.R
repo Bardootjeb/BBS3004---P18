@@ -299,7 +299,16 @@ dds_histology$Histology <- relevel(dds_histology$Histology, ref = "Control")
 dds_histology <- DESeq(dds_histology) 
 
 # 6. Extract DEGs for groups: current smokers, ex smokers, never smokers 
+
+res_control_vs_SC <- results(dds_histology, contrast = c ("histology", "control", "1"))
+res_control_vs_AC <- results(dds_histology, contrast = c ("histology", "control", "2"))
+res_control_vs_LC <- results(dds_histology, contrast = c ("histology", "control", "3"))
+
 # 7. Extract DEGs within each comparison individually
+
+DEGs_never_vs_current <- res_never_vs_current[which(res_never_vs_current$padj < 0.01 & abs(res$log2FoldChange) > 1), ]
+DEGs_never_vs_ex <- res_never_vs_ex[which(res_never_vs_ex$padj < 0.01 & abs(res$log2FoldChange) > 1), ]
+DEGs_ex_vs_current <- res_ex_vs_current[which(res_ex_vs_current$padj < 0.01 & abs(res$log2FoldChange) > 1), ]
 # 8. Save to TSV              
 
 
@@ -315,8 +324,8 @@ dds_Tumorstage <- DESeqDataSetFromMatrix(countData = raw_counts,
                               design = ~ Tumor_stage)
 # Quality control
 # Remove genes with low counts
-keep <- rowMeans(counts(dds)) >=10
-dds <- dds[keep,]
+keep <- rowMeans(raw_counts(dds_Tumorstage)) >=10
+dds_Tumorstage <- dds_Tumorstage[keep,]
 
 
 
