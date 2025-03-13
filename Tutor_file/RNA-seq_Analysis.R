@@ -19,7 +19,7 @@ setwd("~/Research/PhD/Education/2025/BBS3004/Data/")
 # This first part of the analysis uses FPKM normalised data
 
 # Load your Data
-FPKM_Data <- read.delim("GSE81089_FPKM_cufflinks.tsv", header=TRUE, row.names=1, sep="\t", check.names = FALSE)
+FPKM_Data <- read.delim("FPKM_cufflinks.tsv", header=TRUE, row.names=1, sep="\t", check.names = FALSE)
 
 # get metadata 
 gse <- getGEO(GEO = 'GSE81089', GSEMatrix = TRUE)
