@@ -108,8 +108,30 @@ save.pdf(function(){
     theme(axis.text.x = element_text(angle = 45, hjust = 1))# Rotate sample labels
 }, "Sample Gene Expression Levels")
 
+# Boxplot of gene expression grouped by source
+ggplot(expression, aes(x = Source, y = Expression, fill = Source)) +
+  geom_boxplot(alpha = 0.7, outlier.shape = NA) +  # Transparent boxplot
+  geom_jitter(width = 0.2, alpha = 0.6) +  # Adds individual points for visibility
+  facet_wrap(~ Gene, scales = "free_y") +  # Separate plots for each gene
+  theme_minimal() +
+  labs(title = "Gene Expression Levels by Source",
+       x = "Source",
+       y = "Expression Level") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))  # Rotate labels for readability
+
+# Boxplot of gene expression grouped by smoking
+ggplot(expression, aes(x = Smoking_Status, y = Expression, fill = Smoking_Status)) +
+  geom_boxplot(alpha = 0.7, outlier.shape = NA) +  # Transparent boxplot
+  geom_jitter(width = 0.2, alpha = 0.6) +  # Adds individual points for visibility
+  facet_wrap(~ Gene, scales = "free_y") +  # Separate plots for each gene
+  theme_minimal() +
+  labs(title = "Gene Expression Levels by Smoking Status",
+       x = "Smoking Status",
+       y = "Expression Level") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))  # Rotate labels for readability
+
 # Boxplot of gene expression grouped by sex
-ggplot(expression_long, aes(x = Sex, y = Expression, fill = Sex)) +
+ggplot(expression, aes(x = Sex, y = Expression, fill = Sex)) +
   geom_boxplot(alpha = 0.7, outlier.shape = NA) +  # Transparent boxplot
   geom_jitter(width = 0.2, alpha = 0.6) +  # Adds individual points for visibility
   facet_wrap(~ Gene, scales = "free_y") +  # Separate plots for each gene
@@ -118,8 +140,6 @@ ggplot(expression_long, aes(x = Sex, y = Expression, fill = Sex)) +
        x = "Sex",
        y = "Expression Level") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))  # Rotate labels for readability
-
-
 
 
 # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
