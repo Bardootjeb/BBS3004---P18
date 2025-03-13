@@ -224,8 +224,24 @@ keep <- rowMeans(counts(dds)) >=10
 dds <- dds[keep,]
 
 dds_Tumorstage <- DESeq(dds)
+<<<<<<< Updated upstream
 
 
+=======
+
+
+# deseq smoking status annefleur 
+# change variables from chracters to factors for smoking status 
+metadata.subset$Smoking_Status <- as.factor(metadata.subset$Smoking_Status)
+
+# make deseq set for smoking status
+dds_smoking <- DESeqDataSetFromMatrix(countData = raw_counts,
+                                      colData = metadata.subset,
+                                      design = ~ Smoking_Status)
+
+# Set never smokers (3) as the Reference
+dds_smoking$Smoking_Status <- relevel(dds_smoking$Smoking_Status, ref = "3")
+>>>>>>> Stashed changes
 
 
 
