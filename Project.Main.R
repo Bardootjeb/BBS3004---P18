@@ -231,6 +231,25 @@ ggplot(res_df, aes(x = log2FoldChange, y = -log10(padj), color = significance)) 
 }, "Volcano Plot")
 
 
-# Construct a DESeqDataSet object for specific variable (age, gender, smoking_status etc)
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+#deseq for tumor_stage
+install.packages("tidyr")  # Install if you haven't
+library(tidyr)  # Load the package
 
+# Replace NA values with "Control" in metadata
+metadata.subset<- metadata.subset%>%
+  mutate(across(everything(), ~replace_na(.x, "Control"))) 
 
+# change variables from chracters to factors for tumor
+metadata.subset$Tumor_stage <- as.factor(metadata.subset$Source)
+
+# make deseq set for Tumor_stage
+dds_Tumorstage <- DESeqDataSetFromMatrix(countData = raw_counts,
+                              colData = metadata.subset,
+                              design = ~ Tumor_stage)
+# Quality control
+# Remove genes with low counts
+keep <- rowMeans(counts(dds)) >=10
+dds <- dds[keep,]
+
+dds_Tumorstage <- DESeq(dds)
