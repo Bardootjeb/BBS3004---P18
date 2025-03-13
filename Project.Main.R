@@ -31,6 +31,7 @@ require(pheatmap)
 require(clusterProfiler)
 require(org.Hs.eg.db)
 require(GEOquery)
+require(tidyr)
 
 
 # Load FPKM normalized data 
@@ -202,9 +203,10 @@ ggplot(res_df, aes(x = log2FoldChange, y = -log10(padj), color = significance)) 
 
 
 #=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-#Step 3 dese2 for every variable
+#Step 3 DESeq2 for every variable
 #=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= 
 
+# General steps everyone still needs to do:
 install.packages("tidyr")  # Install if you haven't
 library(tidyr)  # Load the package
 
@@ -212,8 +214,42 @@ library(tidyr)  # Load the package
 metadata.subset<- metadata.subset%>%
   mutate(across(everything(), ~replace_na(.x, "Control"))) 
 
+# DESeq2 for smoking - Anne fleur
+# 1. change variables from chracters to factors for 'smoking status' (or gender etc.) 
+metadata.subset$Smoking_Status <- as.factor(metadata.subset$Smoking_Status)
 
-#deseq tumor stage Sabya
+# 2. Construct a DESeqDataSet object
+dds_smoking <- DESeqDataSetFromMatrix(countData = raw_counts,
+                                      colData = metadata.subset,
+                                      design = ~ Smoking_Status)
+
+# 3. Quality control - Remove genes with low counts
+keep <- rowMeans(counts(dds_smoking) >=10
+dds_smoking <- dds_smoking[keep,]
+
+# 4. Set never smokers (3) as the Reference
+dds_smoking$Smoking_Status <- relevel(dds_smoking$Smoking_Status, ref = "3")
+
+# 5. Run DESeq2
+dds_smoking <- DESeq(dds_smoking)  
+
+# 6. Extract DEGs for groups: current smokers, ex smokers, never smokers
+res_never_vs_current <- results(dds_smoking, contrast = c ("Smoking_Status", "3", "1"))
+res_never_vs_ex <- results(dds_smoking, contrast = c ("Smoking_Status", "3", "2"))
+res_ex_vs_current <- results(dds_smoking, contrast = c ("Smoking_Status", "1", "2"))
+
+# 7. Extract DEGs within each comparison individually
+DEGs_never_vs_current <- res_never_vs_current[which(res_never_vs_current$padj < 0.01 & abs(res$log2FoldChange) > 1), ]
+DEGs_never_vs_ex <- res_never_vs_ex[which(res_never_vs_ex$padj < 0.01 & abs(res$log2FoldChange) > 1), ]
+DEGs_ex_vs_current <- res_ex_vs_current[which(res_ex_vs_current$padj < 0.01 & abs(res$log2FoldChange) > 1), ]
+
+# 8. Save to TSV
+write.table(DEGs_never_vs_current, file= "DEGs_never_vs_current.tsv", sep = "\t", col.names = F)
+
+# 9. Making a plot 
+
+
+# DESeq 2 for tumor stage - Sabya
 # change variables from chracters to factors for tumor
 metadata.subset$Tumor_stage <- as.factor(metadata.subset$Tumor_stage)
 
@@ -225,26 +261,6 @@ dds_Tumorstage <- DESeqDataSetFromMatrix(countData = raw_counts,
 # Remove genes with low counts
 keep <- rowMeans(counts(dds)) >=10
 dds <- dds[keep,]
-
-dds_Tumorstage <- DESeq(dds)
-<<<<<<< Updated upstream
-
-
-=======
-
-
-# deseq smoking status annefleur 
-# change variables from chracters to factors for smoking status 
-metadata.subset$Smoking_Status <- as.factor(metadata.subset$Smoking_Status)
-
-# make deseq set for smoking status
-dds_smoking <- DESeqDataSetFromMatrix(countData = raw_counts,
-                                      colData = metadata.subset,
-                                      design = ~ Smoking_Status)
-
-# Set never smokers (3) as the Reference
-dds_smoking$Smoking_Status <- relevel(dds_smoking$Smoking_Status, ref = "3")
->>>>>>> Stashed changes
 
 
 
