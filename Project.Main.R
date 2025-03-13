@@ -253,7 +253,7 @@ dds_smoking <- DESeqDataSetFromMatrix(countData = raw_counts,
                                       design = ~ Smoking_Status)
 
 # 3. Quality control - Remove genes with low counts
-keep <- rowMeans(counts(dds_smoking) >=10
+keep <- rowMeans(counts(dds_smoking)) >=10
 dds_smoking <- dds_smoking[keep,]
 
 # 4. Set never smokers (3) as the Reference
@@ -289,7 +289,7 @@ dds_histology <- DESeqDataSetFromMatrix(countData = raw_counts,
                                       design = ~ Histology)
 
 # 3. Quality control - Remove genes with low counts
-keep <- rowMeans(counts(dds_histology) >=10
+keep <- rowMeans(counts(dds_histology)) >=10
 dds_histology <- dds_histology[keep,]
                  
 # 4. Set 'control' as the Reference
