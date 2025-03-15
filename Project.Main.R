@@ -278,7 +278,6 @@ write.table(DEGs_never_vs_current, file= "DEGs_never_vs_current.tsv", sep = "\t"
 # 9. Making a plot 
 
 
-
 # DESeq 2 for histology - Silke
 # 1. change variables from characters to factors for 'histology' 
 metadata.subset$Histology <- as.factor(metadata.subset$Histology)
