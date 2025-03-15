@@ -80,7 +80,7 @@ if (!dir.exists("Output")) {
   dir.create("Output")
 }
 
-# Select our the genes of interest
+# Select our the genes of interest B-RAF, K-RAS, EGFR
 interest.genes <- c("ENSG00000157764", "ENSG00000133703", "ENSG00000146648")
 
 # Subset our genes of interest into new df by filtering on columns
@@ -235,14 +235,13 @@ ggplot(res_df, aes(x = log2FoldChange, y = -log10(padj), color = significance)) 
 
 
 #=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-#Step 3 DESeq2 for every variable
-#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= 
+# DESeq2 for every variable
 
-# Replace NA values with "Control" in metadata
+# First replace NA values with "Control" in metadata
 metadata.subset<- metadata.subset%>%
   mutate(across(everything(), ~replace_na(.x, "Control"))) 
 
-
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-=
 # DESeq2 for smoking - Anne fleur
 # 1. change variables from chracters to factors for 'smoking status' (or gender etc.) 
 metadata.subset$Smoking_Status <- as.factor(metadata.subset$Smoking_Status)
@@ -277,7 +276,7 @@ write.table(DEGs_never_vs_current, file= "DEGs_never_vs_current.tsv", sep = "\t"
 
 # 9. Making a plot 
 
-
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-=
 # DESeq 2 for histology - Silke
 # 1. change variables from characters to factors for 'histology' 
 metadata.subset$Histology <- as.factor(metadata.subset$Histology)
@@ -298,20 +297,97 @@ dds_histology$Histology <- relevel(dds_histology$Histology, ref = "Control")
 dds_histology <- DESeq(dds_histology) 
 
 # 6. Extract DEGs for groups: current smokers, ex smokers, never smokers 
-
-res_control_vs_SC <- results(dds_histology, contrast = c ("histology", "control", "1"))
-res_control_vs_AC <- results(dds_histology, contrast = c ("histology", "control", "2"))
-res_control_vs_LC <- results(dds_histology, contrast = c ("histology", "control", "3"))
+res_control_vs_SC <- results(dds_histology, contrast = c ("Histology", "Control", "1"))
+res_control_vs_AC <- results(dds_histology, contrast = c ("Histology", "Control", "2"))
+res_control_vs_LC <- results(dds_histology, contrast = c ("Histology", "Control", "3"))
 
 # 7. Extract DEGs within each comparison individually
+DEGs_control_vs_SC <- res_control_vs_SC[which(res_control_vs_SC$padj < 0.01 & abs(res$log2FoldChange) > 1), ]
+DEGs_control_vs_AC <- res_control_vs_AC[which(res_control_vs_AC$padj < 0.01 & abs(res$log2FoldChange) > 1), ]
+DEGs_control_vs_LC <- res_control_vs_LC[which(res_control_vs_LC$padj < 0.01 & abs(res$log2FoldChange) > 1), ]
 
-DEGs_never_vs_current <- res_never_vs_current[which(res_never_vs_current$padj < 0.01 & abs(res$log2FoldChange) > 1), ]
-DEGs_never_vs_ex <- res_never_vs_ex[which(res_never_vs_ex$padj < 0.01 & abs(res$log2FoldChange) > 1), ]
-DEGs_ex_vs_current <- res_ex_vs_current[which(res_ex_vs_current$padj < 0.01 & abs(res$log2FoldChange) > 1), ]
-# 8. Save to TSV              
+# 8. Save to TSV
+write.table(DEGs_control_vs_SC, file= "DEGs_control_vs_SC.tsv", sep = "\t", col.names = F)
+write.table(DEGs_control_vs_AC, file= "DEGs_control_vs_AC.tsv", sep = "\t", col.names = F)
+write.table(DEGs_control_vs_LC, file= "DEGs_control_vs_LC.tsv", sep = "\t", col.names = F)
 
+# 9. Making a plot 
 
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-=
+# DESeq2 for sex
+# 1. change variables from chracters to factors for sex
+metadata.subset$Sex <- as.factor(metadata.subset$Sex)
 
+# 2. Construct a DESeqDataSet object
+dds_sex <- DESeqDataSetFromMatrix(countData = raw_counts,
+                                        colData = metadata.subset,
+                                        design = ~ Sex)
+
+# 3. Quality control - Remove genes with low counts
+keep <- rowMeans(counts(dds_sex)) >=10
+dds_sex <- dds_sex[keep,]
+
+# 4. Set male as the Reference
+dds_sex$Sex <- relevel(dds_sex$Sex, ref = "male")
+
+# 5. Run DESeq2
+dds_sex <- DESeq(dds_sex) 
+
+# 6. Extract DEGs
+res_male_vs_female <- results(dds_sex, contrast = c ("Sex", "male", "female"))
+
+# 7. Extract DEGs within each comparison individually
+DEGs_male_vs_female <- res_male_vs_female[which(res_male_vs_female$padj < 0.01 & abs(res$log2FoldChange) > 1), ]
+
+# 8. Save to TSV
+write.table(DEGs_male_vs_female, file= "DEGs_male_vs_female.tsv", sep = "\t", col.names = F)
+
+# 9. Making a plot 
+
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-=
+# DESeq2 for performance 
+# 1. change variables from chracters to factors for performance
+metadata.subset$Performance <- as.factor(metadata.subset$Performance)
+
+# 2. Construct a DESeqDataSet object
+dds_performance <- DESeqDataSetFromMatrix(countData = raw_counts,
+                                  colData = metadata.subset,
+                                  design = ~ Performance)
+# 3. Quality control - Remove genes with low counts
+keep <- rowMeans(counts(dds_performance)) >=10
+dds_performance <- dds_performance[keep,]
+
+# 4. Set '0 = normal activity' as the Reference
+dds_performance$Performance <- relevel(dds_performance$Performance, ref = "0")
+
+# 5. Run DESeq2
+dds_performance <- DESeq(dds_performance)
+
+# 6. Extract DEGs for groups:
+# 7. Extract DEGs within each comparison individually
+# 8. Save to TSV
+# 9. Making a plot 
+
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-=
+# DESeq2 for age
+# 1. change variables from chracters to factors for performance 
+metadata.subset$Age <- as.factor(metadata.subset$Age)
+
+# 2. Construct a DESeqDataSet object
+dds_age <- DESeqDataSetFromMatrix(countData = raw_counts,
+                                         colData = metadata.subset,
+                                         design = ~ Age)
+# 3. Quality control - Remove genes with low counts
+keep <- rowMeans(counts(dds_age)) >=10
+dds_age <- dds_age[keep,]
+
+# 4. Set '45 = youngest age' as the Reference ???
+
+# 5. Run DESeq2
+# 6. Extract DEGs for groups:
+# 7. Extract DEGs within each comparison individually
+# 8. Save to TSV
+# 9. Making a plot 
 
 # DESeq 2 for tumor stage - Sabya
 # 1. change variables from chracters to factors for tumor
