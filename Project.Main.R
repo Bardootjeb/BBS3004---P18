@@ -227,7 +227,7 @@ print(res_df$significance)
 save.pdf(function(){
 ggplot(res_df, aes(x = log2FoldChange, y = -log10(padj), color = significance)) +
   geom_point(alpha = 0.6) +
-  scale_color_manual(values = c("Upregulated" = "red", "Downregulated" = "blue", "Not Significant" = "grey")) +
+#  scale_color_manual(values = c("Upregulated" = "red", "Downregulated" = "blue", "Not Significant" = "grey")) +
   theme_minimal() +
   labs(title = "Volcano Plot of DEGs", x = "Log2 Fold Change", y = "-Log10 Adjusted P-Value") +
   theme(legend.title = element_blank())
@@ -240,6 +240,8 @@ ggplot(res_df, aes(x = log2FoldChange, y = -log10(padj), color = significance)) 
 # First replace NA values with "Control" in metadata
 metadata.subset<- metadata.subset%>%
   mutate(across(everything(), ~replace_na(.x, "Control"))) 
+
+DSQ2(raw_counts, metadata.subset, "Smoking_Status", 3, "Smoking")
 
 # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-=
 # DESeq2 for smoking - Anne fleur
