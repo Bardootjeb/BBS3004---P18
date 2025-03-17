@@ -38,21 +38,14 @@ require(tidyr)
 FPKM_data <- read.delim("FPKM_cufflinks.tsv", header=TRUE, 
                    row.names=1, sep="\t", check.names=FALSE)
 
-# Looking at the head counts to see the type of data inside
-head(FPKM_data)
-
 # Load metadata using the getGEO function
 gse <- getGEO(GEO = 'GSE81089', GSEMatrix = TRUE)
+
 # Extract metadata using pData function
 metadata <- pData(phenoData(gse[[1]]))
-# Look at the data inside. Head gives you the first 6
-head(metadata)
-# I did colnames to see the different colomns
-colnames(metadata) 
+
 # Create subset
 metadata.subset <- metadata[, c(1, 8, 48, 49, 50, 51, 52, 53, 54, 56)]
-# Look at the different names
-colnames(FPKM_data)
 
 # Renaming the colnames to the appropriate names to make it more readable
 metadata.subset <- setNames(metadata.subset, c(
@@ -68,12 +61,7 @@ metadata.subset <- setNames(metadata.subset, c(
 rownames(metadata.subset) <- metadata.subset$Sample
 
 # Remove the last row from FPKM_data
-head(FPKM_data)
-dim(FPKM_data)
 FPKM_data <- FPKM_data[-nrow(FPKM_data), ]
-
-# Check if the last row is removed
-dim(FPKM_data)  # Check new dimensions
 
 # Ensure the output directory exists
 if (!dir.exists("Output")) {
@@ -98,7 +86,7 @@ express<- reshape2::melt(express, id.vars = "Gene", variable.name = "Sample",
 expression <- merge(express, metadata.subset, by = "Sample", all.x = TRUE)
 
 # Plot expression levels of selected genes
-
+# 3 genes separately in 3 plots
 gene_colors <- c("pink", "lightblue", "lightgreen")  #create colour data
 names(gene_colors) <- interest.genes  #assign a colour to each gene of interest
 
@@ -111,6 +99,16 @@ for(i in interest.genes){eplot <- ggplot(expression %>% filter(Gene == i), aes(x
        x = "Expression Level",
        y = "Sample") 
 print(eplot)}
+
+# 3 genes together in one plot
+ggplot(expression, aes(x = Sample, y = Expression, fill = Gene)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  facet_wrap(~ Gene, scales = "free_y") +  # Separate plots per gene
+  theme_minimal() +
+  labs(title = "Gene Expression Levels Across Samples",
+       x = "Sample",
+       y = "Expression Level") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))  # Rotate sample labels
 
 # Boxplot of gene expression grouped by source 
 ggplot(expression, aes(x = Source, y = Expression, fill = Source)) +
@@ -164,9 +162,6 @@ metadata.subset <- metadata.subset[match(colnames(raw_counts), rownames(metadata
 # Check if they now match
 all(colnames(raw_counts) == rownames(metadata.subset))
 
-# Check the values in the raw counts
-summary(raw_counts)
-
 # Construct a DESeqDataSet object 
 dds <- DESeqDataSetFromMatrix(countData = raw_counts,
                               colData = metadata.subset,
@@ -181,11 +176,8 @@ dds <- dds[keep,]
 
 print(dds)
 
-# Set the factor level
-class(metadata.subset$Source)  # Check if it's "character" or "factor"
+# Set the Source as factor instead of character
 metadata.subset$Source <- as.factor(metadata.subset$Source)
-class(metadata.subset$Source)  # Should now be "factor"
-levels(metadata.subset$Source)
 
 # Sets the human non-malignant tissue as the base for when comparing
 metadata.subset$Source <- relevel(metadata.subset$Source, ref = "Human non-malignant tissue")
@@ -206,7 +198,7 @@ summary(res)
 deg_genes <- res[which(res$padj < 0.01 & abs(res$log2FoldChange) > 1), ]
 
 # Check how many significant DEGs were found
- nrow(deg_genes)
+nrow(deg_genes)
 
 # Save results to a TSV file for further analysis
 write.table(deg_genes, file= "Significant_DEGs.tsv", sep = "\t", col.names = F)
@@ -269,12 +261,13 @@ res_never_vs_ex <- results(dds_smoking, contrast = c ("Smoking_Status", "3", "2"
 res_ex_vs_current <- results(dds_smoking, contrast = c ("Smoking_Status", "1", "2"))
 
 # 7. Extract DEGs within each comparison individually
-DEGs_never_vs_current <- res_never_vs_current[which(res_never_vs_current$padj < 0.01 & abs(res$log2FoldChange) > 1), ]
-DEGs_never_vs_ex <- res_never_vs_ex[which(res_never_vs_ex$padj < 0.01 & abs(res$log2FoldChange) > 1), ]
-DEGs_ex_vs_current <- res_ex_vs_current[which(res_ex_vs_current$padj < 0.01 & abs(res$log2FoldChange) > 1), ]
+DEGs_never_vs_current <- res_never_vs_current[which(res_never_vs_current$padj < 0.01 & abs(res_never_vs_current$log2FoldChange) > 1), ]
+DEGs_never_vs_ex <- res_never_vs_ex[which(res_never_vs_ex$padj < 0.01 & abs(res_never_vs_ex$log2FoldChange) > 1), ]
+DEGs_ex_vs_current <- res_ex_vs_current[which(res_ex_vs_current$padj < 0.01 & abs(res_ex_vs_current$log2FoldChange) > 1), ]
 
 # 8. Save to TSV
 write.table(DEGs_never_vs_current, file= "DEGs_never_vs_current.tsv", sep = "\t", col.names = F)
+write.table(DEGs_never_vs_ex, file= "DEGs_never_vs_ex.tsv", sep = "\t", col.names = F)
 
 # 9. Making a plot 
 
@@ -304,9 +297,9 @@ res_control_vs_AC <- results(dds_histology, contrast = c ("Histology", "Control"
 res_control_vs_LC <- results(dds_histology, contrast = c ("Histology", "Control", "3"))
 
 # 7. Extract DEGs within each comparison individually
-DEGs_control_vs_SC <- res_control_vs_SC[which(res_control_vs_SC$padj < 0.01 & abs(res$log2FoldChange) > 1), ]
-DEGs_control_vs_AC <- res_control_vs_AC[which(res_control_vs_AC$padj < 0.01 & abs(res$log2FoldChange) > 1), ]
-DEGs_control_vs_LC <- res_control_vs_LC[which(res_control_vs_LC$padj < 0.01 & abs(res$log2FoldChange) > 1), ]
+DEGs_control_vs_SC <- res_control_vs_SC[which(res_control_vs_SC$padj < 0.01 & abs(res_control_vs_SC$log2FoldChange) > 1), ]
+DEGs_control_vs_AC <- res_control_vs_AC[which(res_control_vs_AC$padj < 0.01 & abs(res_control_vs_AC$log2FoldChange) > 1), ]
+DEGs_control_vs_LC <- res_control_vs_LC[which(res_control_vs_LC$padj < 0.01 & abs(res_control_vs_LC$log2FoldChange) > 1), ]
 
 # 8. Save to TSV
 write.table(DEGs_control_vs_SC, file= "DEGs_control_vs_SC.tsv", sep = "\t", col.names = F)
@@ -339,7 +332,7 @@ dds_sex <- DESeq(dds_sex)
 res_male_vs_female <- results(dds_sex, contrast = c ("Sex", "male", "female"))
 
 # 7. Extract DEGs within each comparison individually
-DEGs_male_vs_female <- res_male_vs_female[which(res_male_vs_female$padj < 0.01 & abs(res$log2FoldChange) > 1), ]
+DEGs_male_vs_female <- res_male_vs_female[which(res_male_vs_female$padj < 0.01 & abs(res_male_vs_female$log2FoldChange) > 1), ]
 
 # 8. Save to TSV
 write.table(DEGs_male_vs_female, file= "DEGs_male_vs_female.tsv", sep = "\t", col.names = F)
@@ -391,6 +384,7 @@ dds_age <- dds_age[keep,]
 # 8. Save to TSV
 # 9. Making a plot 
 
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-=
 # DESeq 2 for tumor stage - Sabya
 # 1. change variables from chracters to factors for tumor
 metadata.subset$Tumor_stage <- as.factor(metadata.subset$Tumor_stage)
@@ -404,5 +398,6 @@ dds_Tumorstage <- DESeqDataSetFromMatrix(countData = raw_counts,
 keep <- rowMeans(raw_counts(dds_Tumorstage)) >=10
 dds_Tumorstage <- dds_Tumorstage[keep,]
 
-
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-=
+# Step 3. GO
 
