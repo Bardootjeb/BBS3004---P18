@@ -221,7 +221,7 @@ ggplot(res_df, aes(x = log2FoldChange, y = -log10(padj), color = significance)) 
   geom_point(alpha = 0.6) +
 #  scale_color_manual(values = c("Upregulated" = "red", "Downregulated" = "blue", "Not Significant" = "grey")) +
   theme_minimal() +
-  labs(title = "Volcano Plot of DEGs", x = "Log2 Fold Change", y = "-Log10 Adjusted P-Value") +
+  labs(title = "Volcano Plot of DEGs in NSCLC Tissue vs. Normal Tissue ", x = "Log2 Fold Change", y = "-Log10 Adjusted P-Value") +
   theme(legend.title = element_blank())
 }, "Volcano Plot")
 
