@@ -95,14 +95,14 @@ express<- reshape2::melt(express, id.vars = "Gene", variable.name = "Sample",
                          value.name = "Expression")
 
 # Merge with metadata
-expression <- merge(express, metadata.subset, by = "Sample", all.x = TRUE)
+express <- merge(express, metadata.subset, by = "Sample", all.x = TRUE)
 
 # Plot expression levels of selected genes
 
 gene_colors <- c("pink", "lightblue", "lightgreen")  #create colour data
 names(gene_colors) <- interest.genes  #assign a colour to each gene of interest
 
-for(i in interest.genes){eplot <- ggplot(expression %>% filter(Gene == i), aes(x = Sample, y = Expression, fill = Gene)) +
+for(i in interest.genes){eplot <- ggplot(express %>% filter(Gene == i), aes(x = Sample, y = Expression, fill = Gene)) +
   geom_col(position = "dodge", fill = gene_colors[i]) +
   facet_wrap(~ Gene, scales = "free_y") +
   coord_flip() +  # Flip x and y axes
@@ -113,7 +113,7 @@ for(i in interest.genes){eplot <- ggplot(expression %>% filter(Gene == i), aes(x
 print(eplot)}
 
 # Boxplot of gene expression grouped by source 
-ggplot(expression, aes(x = Source, y = Expression, fill = Source)) +
+ggplot(express, aes(x = Source, y = Expression, fill = Source)) +
   geom_boxplot(alpha = 0.7, outlier.shape = NA) +  # Transparent boxplot
   geom_jitter(width = 0.2, alpha = 0.6) +  # Adds individual points for visibility
   facet_wrap(~ Gene, scales = "free_y") +  # Separate plots for each gene
@@ -124,7 +124,7 @@ ggplot(expression, aes(x = Source, y = Expression, fill = Source)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))  # Rotate labels for readability
 
 # Boxplot of gene expression grouped by sex
-ggplot(expression, aes(x = Sex, y = Expression, fill = Sex)) +
+ggplot(express, aes(x = Sex, y = Expression, fill = Sex)) +
   geom_boxplot(alpha = 0.7, outlier.shape = NA) +  # Transparent boxplot
   geom_jitter(width = 0.2, alpha = 0.6) +  # Adds individual points for visibility
   facet_wrap(~ Gene, scales = "free_y") +  # Separate plots for each gene
@@ -135,7 +135,7 @@ ggplot(expression, aes(x = Sex, y = Expression, fill = Sex)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))  # Rotate labels for readability
 
 # Boxplot of gene expression grouped by smoking status
-ggplot(expression, aes(x = Smoking_Status, y = Expression, fill = Smoking_Status)) +
+ggplot(express, aes(x = Smoking_Status, y = Expression, fill = Smoking_Status)) +
   geom_boxplot(alpha = 0.7, outlier.shape = NA) +  # Transparent boxplot
   geom_jitter(width = 0.2, alpha = 0.6) +  # Adds individual points for visibility
   facet_wrap(~ Gene, scales = "free_y") +  # Separate plots for each gene
