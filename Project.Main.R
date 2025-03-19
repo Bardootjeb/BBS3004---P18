@@ -38,21 +38,14 @@ require(tidyr)
 FPKM_data <- read.delim("FPKM_cufflinks.tsv", header=TRUE, 
                    row.names=1, sep="\t", check.names=FALSE)
 
-# Looking at the head counts to see the type of data inside
-head(FPKM_data)
-
 # Load metadata using the getGEO function
 gse <- getGEO(GEO = 'GSE81089', GSEMatrix = TRUE)
+
 # Extract metadata using pData function
 metadata <- pData(phenoData(gse[[1]]))
-# Look at the data inside. Head gives you the first 6
-head(metadata)
-# I did colnames to see the different colomns
-colnames(metadata) 
+
 # Create subset
 metadata.subset <- metadata[, c(1, 8, 48, 49, 50, 51, 52, 53, 54, 56)]
-# Look at the different names
-colnames(FPKM_data)
 
 # Renaming the colnames to the appropriate names to make it more readable
 metadata.subset <- setNames(metadata.subset, c(
@@ -68,19 +61,14 @@ metadata.subset <- setNames(metadata.subset, c(
 rownames(metadata.subset) <- metadata.subset$Sample
 
 # Remove the last row from FPKM_data
-head(FPKM_data)
-dim(FPKM_data)
 FPKM_data <- FPKM_data[-nrow(FPKM_data), ]
-
-# Check if the last row is removed
-dim(FPKM_data)  # Check new dimensions
 
 # Ensure the output directory exists
 if (!dir.exists("Output")) {
   dir.create("Output")
 }
 
-# Select our the genes of interest
+# Select our the genes of interest B-RAF, K-RAS, EGFR
 interest.genes <- c("ENSG00000157764", "ENSG00000133703", "ENSG00000146648")
 
 # Subset our genes of interest into new df by filtering on columns
@@ -98,7 +86,7 @@ express<- reshape2::melt(express, id.vars = "Gene", variable.name = "Sample",
 express <- merge(express, metadata.subset, by = "Sample", all.x = TRUE)
 
 # Plot expression levels of selected genes
-
+# 3 genes separately in 3 plots
 gene_colors <- c("pink", "lightblue", "lightgreen")  #create colour data
 names(gene_colors) <- interest.genes  #assign a colour to each gene of interest
 
@@ -111,6 +99,16 @@ for(i in interest.genes){eplot <- ggplot(express %>% filter(Gene == i), aes(x = 
        x = "Expression Level",
        y = "Sample") 
 print(eplot)}
+
+# 3 genes together in one plot
+ggplot(expression, aes(x = Sample, y = Expression, fill = Gene)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  facet_wrap(~ Gene, scales = "free_y") +  # Separate plots per gene
+  theme_minimal() +
+  labs(title = "Gene Expression Levels Across Samples",
+       x = "Sample",
+       y = "Expression Level") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))  # Rotate sample labels
 
 # Boxplot of gene expression grouped by source 
 ggplot(express, aes(x = Source, y = Expression, fill = Source)) +
@@ -164,9 +162,6 @@ metadata.subset <- metadata.subset[match(colnames(raw_counts), rownames(metadata
 # Check if they now match
 all(colnames(raw_counts) == rownames(metadata.subset))
 
-# Check the values in the raw counts
-summary(raw_counts)
-
 # Construct a DESeqDataSet object 
 dds <- DESeqDataSetFromMatrix(countData = raw_counts,
                               colData = metadata.subset,
@@ -181,11 +176,8 @@ dds <- dds[keep,]
 
 print(dds)
 
-# Set the factor level
-class(metadata.subset$Source)  # Check if it's "character" or "factor"
+# Set the Source as factor instead of character
 metadata.subset$Source <- as.factor(metadata.subset$Source)
-class(metadata.subset$Source)  # Should now be "factor"
-levels(metadata.subset$Source)
 
 # Sets the human non-malignant tissue as the base for when comparing
 metadata.subset$Source <- relevel(metadata.subset$Source, ref = "Human non-malignant tissue")
@@ -206,7 +198,7 @@ summary(res)
 deg_genes <- res[which(res$padj < 0.01 & abs(res$log2FoldChange) > 1), ]
 
 # Check how many significant DEGs were found
- nrow(deg_genes)
+nrow(deg_genes)
 
 # Save results to a TSV file for further analysis
 write.table(deg_genes, file= "Significant_DEGs.tsv", sep = "\t", col.names = F)
@@ -227,24 +219,37 @@ print(res_df$significance)
 save.pdf(function(){
 ggplot(res_df, aes(x = log2FoldChange, y = -log10(padj), color = significance)) +
   geom_point(alpha = 0.6) +
-  scale_color_manual(values = c("Upregulated" = "red", "Downregulated" = "blue", "Not Significant" = "grey")) +
+#  scale_color_manual(values = c("Upregulated" = "red", "Downregulated" = "blue", "Not Significant" = "grey")) +
   theme_minimal() +
-  labs(title = "Volcano Plot of DEGs", x = "Log2 Fold Change", y = "-Log10 Adjusted P-Value") +
+  labs(title = "Volcano Plot of DEGs in NSCLC Tissue vs. Normal Tissue ", x = "Log2 Fold Change", y = "-Log10 Adjusted P-Value") +
   theme(legend.title = element_blank())
 }, "Volcano Plot")
 
 
-#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-#Step 3 DESeq2 for every variable
-#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= 
+<<<<<<< HEAD
 
-# Replace NA values with "Control" in metadata
+#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+# DESeq2 for every variable
+
+=======
+#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+# DESeq2 for every variable
+
+>>>>>>> 97ef391a567d1fe6867099b56ffe048d27023cca
+# First replace NA values with "Control" in metadata
 metadata.subset<- metadata.subset%>%
   mutate(across(everything(), ~replace_na(.x, "Control"))) 
 
+DSQ2(raw_counts, metadata.subset, "Smoking_Status", 3, "Smoking")
 
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-=
 # DESeq2 for smoking - Anne fleur
 # 1. change variables from chracters to factors for 'smoking status' (or gender etc.) 
+
+# Function to get the results for smoking
+DSQ2("Smoking_Status", 3)
+
+ ## The function makes the rest of the code obsolete
 metadata.subset$Smoking_Status <- as.factor(metadata.subset$Smoking_Status)
 
 # 2. Construct a DESeqDataSet object
@@ -268,64 +273,261 @@ res_never_vs_ex <- results(dds_smoking, contrast = c ("Smoking_Status", "3", "2"
 res_ex_vs_current <- results(dds_smoking, contrast = c ("Smoking_Status", "1", "2"))
 
 # 7. Extract DEGs within each comparison individually
-DEGs_never_vs_current <- res_never_vs_current[which(res_never_vs_current$padj < 0.01 & abs(res$log2FoldChange) > 1), ]
-DEGs_never_vs_ex <- res_never_vs_ex[which(res_never_vs_ex$padj < 0.01 & abs(res$log2FoldChange) > 1), ]
-DEGs_ex_vs_current <- res_ex_vs_current[which(res_ex_vs_current$padj < 0.01 & abs(res$log2FoldChange) > 1), ]
+DEGs_never_vs_current <- res_never_vs_current[which(res_never_vs_current$padj < 0.01 & abs(res_never_vs_current$log2FoldChange) > 1), ]
+DEGs_never_vs_ex <- res_never_vs_ex[which(res_never_vs_ex$padj < 0.01 & abs(res_never_vs_ex$log2FoldChange) > 1), ]
+DEGs_ex_vs_current <- res_ex_vs_current[which(res_ex_vs_current$padj < 0.01 & abs(res_ex_vs_current$log2FoldChange) > 1), ]
 
 # 8. Save to TSV
 write.table(DEGs_never_vs_current, file= "DEGs_never_vs_current.tsv", sep = "\t", col.names = F)
+write.table(DEGs_never_vs_ex, file= "DEGs_never_vs_ex.tsv", sep = "\t", col.names = F)
 
 # 9. Making a plot 
 
-
-
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-=
 # DESeq 2 for histology - Silke
 # 1. change variables from characters to factors for 'histology' 
+
+# Function to get the results for smoking
+DSQ2("Histology", "Control")
+
+
 metadata.subset$Histology <- as.factor(metadata.subset$Histology)
 
 # 2. Construct a DESeqDataSet object
 dds_histology <- DESeqDataSetFromMatrix(countData = raw_counts,
-                                      colData = metadata.subset,
-                                      design = ~ Histology)
+                                        colData = metadata.subset,
+                                        design = ~ Histology)
 
 # 3. Quality control - Remove genes with low counts
 keep <- rowMeans(counts(dds_histology)) >=10
 dds_histology <- dds_histology[keep,]
-                 
+
 # 4. Set 'control' as the Reference
 dds_histology$Histology <- relevel(dds_histology$Histology, ref = "Control")
-                 
+
 # 5. Run DESeq2
 dds_histology <- DESeq(dds_histology) 
 
 # 6. Extract DEGs for groups: current smokers, ex smokers, never smokers 
-
-res_control_vs_SC <- results(dds_histology, contrast = c ("histology", "control", "1"))
-res_control_vs_AC <- results(dds_histology, contrast = c ("histology", "control", "2"))
-res_control_vs_LC <- results(dds_histology, contrast = c ("histology", "control", "3"))
+res_control_vs_SC <- results(dds_histology, contrast = c ("Histology", "Control", "1"))
+res_control_vs_AC <- results(dds_histology, contrast = c ("Histology", "Control", "2"))
+res_control_vs_LC <- results(dds_histology, contrast = c ("Histology", "Control", "3"))
 
 # 7. Extract DEGs within each comparison individually
+<<<<<<< HEAD
+DEGs_control_vs_SC <- res_control_vs_SC[which(res_control_vs_SC$padj < 0.01 & abs(res$log2FoldChange) > 1), ]
+DEGs_control_vs_AC <- res_control_vs_AC[which(res_control_vs_AC$padj < 0.01 & abs(res$log2FoldChange) > 1), ]
+DEGs_control_vs_LC <- res_control_vs_LC[which(res_control_vs_LC$padj < 0.01 & abs(res$log2FoldChange) > 1), ]
 
-DEGs_never_vs_current <- res_never_vs_current[which(res_never_vs_current$padj < 0.01 & abs(res$log2FoldChange) > 1), ]
-DEGs_never_vs_ex <- res_never_vs_ex[which(res_never_vs_ex$padj < 0.01 & abs(res$log2FoldChange) > 1), ]
-DEGs_ex_vs_current <- res_ex_vs_current[which(res_ex_vs_current$padj < 0.01 & abs(res$log2FoldChange) > 1), ]
-# 8. Save to TSV              
+DEGs_control_vs_SC <- res_control_vs_SC[which(res_control_vs_SC$padj < 0.01 & abs(res_control_vs_SC$log2FoldChange) > 1), ]
+DEGs_control_vs_AC <- res_control_vs_AC[which(res_control_vs_AC$padj < 0.01 & abs(res_control_vs_AC$log2FoldChange) > 1), ]
+DEGs_control_vs_LC <- res_control_vs_LC[which(res_control_vs_LC$padj < 0.01 & abs(res_control_vs_LC$log2FoldChange) > 1), ]
+=======
+DEGs_control_vs_SC <- res_control_vs_SC[which(res_control_vs_SC$padj < 0.01 & abs(res_control_vs_SC$log2FoldChange) > 1), ]
+DEGs_control_vs_AC <- res_control_vs_AC[which(res_control_vs_AC$padj < 0.01 & abs(res_control_vs_AC$log2FoldChange) > 1), ]
+DEGs_control_vs_LC <- res_control_vs_LC[which(res_control_vs_LC$padj < 0.01 & abs(res_control_vs_LC$log2FoldChange) > 1), ]
 
+# 8. Save to TSV
+write.table(DEGs_control_vs_SC, file= "DEGs_control_vs_SC.tsv", sep = "\t", col.names = F)
+write.table(DEGs_control_vs_AC, file= "DEGs_control_vs_AC.tsv", sep = "\t", col.names = F)
+write.table(DEGs_control_vs_LC, file= "DEGs_control_vs_LC.tsv", sep = "\t", col.names = F)
+>>>>>>> 97ef391a567d1fe6867099b56ffe048d27023cca
 
+# 9. Making a plot 
 
+<<<<<<< HEAD
+# 8. Save to TSV
+write.table(DEGs_control_vs_SC, file= "DEGs_control_vs_SC.tsv", sep = "\t", col.names = F)
+write.table(DEGs_control_vs_AC, file= "DEGs_control_vs_AC.tsv", sep = "\t", col.names = F)
+write.table(DEGs_control_vs_LC, file= "DEGs_control_vs_LC.tsv", sep = "\t", col.names = F)
 
+# 9. Making a plot 
+
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-=
+# DESeq2 for sex
+# 1. change variables from chracters to factors for sex
+<<<<<<< HEAD
+
+# New function
+DSQ2("Sex", "male")
+
+metadata.subset$Sex <- as.factor(metadata.subset$Sex)
+
+# 2. Construct a DESeqDataSet object
+dds_sex <- DESeqDataSetFromMatrix(countData = raw_counts,
+                                  colData = metadata.subset,
+                                  design = ~ Sex)
+
+# 3. Quality control - Remove genes with low counts
+keep <- rowMeans(counts(dds_sex)) >=10
+dds_sex <- dds_sex[keep,]
+
+# 4. Set male as the Reference
+dds_sex$Sex <- relevel(dds_sex$Sex, ref = "male")
+
+# 5. Run DESeq2
+dds_sex <- DESeq(dds_sex) 
+
+# 6. Extract DEGs
+res_male_vs_female <- results(dds_sex, contrast = c ("Sex", "male", "female"))
+
+# 7. Extract DEGs within each comparison individually
+DEGs_male_vs_female <- res_male_vs_female[which(res_male_vs_female$padj < 0.01 & abs(res$log2FoldChange) > 1), ]
+
+# 8. Save to TSV
+write.table(DEGs_male_vs_female, file= "DEGs_male_vs_female.tsv", sep = "\t", col.names = F)
+
+# 9. Making a plot 
+
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-=
+# DESeq2 for performance 
+
+DSQ2("Performance", "0")
+
+# 1. change variables from chracters to factors for performance
+metadata.subset$Performance <- as.factor(metadata.subset$Performance)
+
+# 2. Construct a DESeqDataSet object
+dds_performance <- DESeqDataSetFromMatrix(countData = raw_counts,
+                                          colData = metadata.subset,
+                                          design = ~ Performance)
+# 3. Quality control - Remove genes with low counts
+keep <- rowMeans(counts(dds_performance)) >=10
+dds_performance <- dds_performance[keep,]
+
+# 4. Set '0 = normal activity' as the Reference
+dds_performance$Performance <- relevel(dds_performance$Performance, ref = "0")
+
+# 5. Run DESeq2
+dds_performance <- DESeq(dds_performance)
+
+# 6. Extract DEGs for groups:
+# 7. Extract DEGs within each comparison individually
+# 8. Save to TSV
+# 9. Making a plot 
+
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-=
+# DESeq2 for age
+# 1. change variables from chracters to factors for performance 
+
+DSQ2("Age", "45")
+
+metadata.subset$Age <- as.factor(metadata.subset$Age)
+
+# 2. Construct a DESeqDataSet object
+dds_age <- DESeqDataSetFromMatrix(countData = raw_counts,
+                                  colData = metadata.subset,
+                                  design = ~ Age)
+# 3. Quality control - Remove genes with low counts
+keep <- rowMeans(counts(dds_age)) >=10
+dds_age <- dds_age[keep,]
+
+# 4. Set '45 = youngest age' as the Reference ???
+
+# 5. Run DESeq2
+# 6. Extract DEGs for groups:
+# 7. Extract DEGs within each comparison individually
+# 8. Save to TSV
+# 9. Making a plot 
+metadata.subset$Sex <- as.factor(metadata.subset$Sex)
+
+# 2. Construct a DESeqDataSet object
+dds_sex <- DESeqDataSetFromMatrix(countData = raw_counts,
+                                        colData = metadata.subset,
+                                        design = ~ Sex)
+
+=======
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-=
+# DESeq2 for sex
+# 1. change variables from chracters to factors for sex
+metadata.subset$Sex <- as.factor(metadata.subset$Sex)
+
+# 2. Construct a DESeqDataSet object
+dds_sex <- DESeqDataSetFromMatrix(countData = raw_counts,
+                                        colData = metadata.subset,
+                                        design = ~ Sex)
+
+>>>>>>> 97ef391a567d1fe6867099b56ffe048d27023cca
+# 3. Quality control - Remove genes with low counts
+keep <- rowMeans(counts(dds_sex)) >=10
+dds_sex <- dds_sex[keep,]
+
+# 4. Set male as the Reference
+dds_sex$Sex <- relevel(dds_sex$Sex, ref = "male")
+
+# 5. Run DESeq2
+dds_sex <- DESeq(dds_sex) 
+
+# 6. Extract DEGs
+res_male_vs_female <- results(dds_sex, contrast = c ("Sex", "male", "female"))
+
+# 7. Extract DEGs within each comparison individually
+DEGs_male_vs_female <- res_male_vs_female[which(res_male_vs_female$padj < 0.01 & abs(res_male_vs_female$log2FoldChange) > 1), ]
+
+# 8. Save to TSV
+write.table(DEGs_male_vs_female, file= "DEGs_male_vs_female.tsv", sep = "\t", col.names = F)
+
+# 9. Making a plot 
+
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-=
+# DESeq2 for performance 
+# 1. change variables from chracters to factors for performance
+metadata.subset$Performance <- as.factor(metadata.subset$Performance)
+
+# 2. Construct a DESeqDataSet object
+dds_performance <- DESeqDataSetFromMatrix(countData = raw_counts,
+                                  colData = metadata.subset,
+                                  design = ~ Performance)
+# 3. Quality control - Remove genes with low counts
+keep <- rowMeans(counts(dds_performance)) >=10
+dds_performance <- dds_performance[keep,]
+
+# 4. Set '0 = normal activity' as the Reference
+dds_performance$Performance <- relevel(dds_performance$Performance, ref = "0")
+
+# 5. Run DESeq2
+dds_performance <- DESeq(dds_performance)
+
+# 6. Extract DEGs for groups:
+# 7. Extract DEGs within each comparison individually
+# 8. Save to TSV
+# 9. Making a plot 
+
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-=
+# DESeq2 for age
+# 1. change variables from chracters to factors for performance 
+metadata.subset$Age <- as.factor(metadata.subset$Age)
+
+# 2. Construct a DESeqDataSet object
+dds_age <- DESeqDataSetFromMatrix(countData = raw_counts,
+                                         colData = metadata.subset,
+                                         design = ~ Age)
+# 3. Quality control - Remove genes with low counts
+keep <- rowMeans(counts(dds_age)) >=10
+dds_age <- dds_age[keep,]
+
+# 4. Set '45 = youngest age' as the Reference ???
+
+# 5. Run DESeq2
+# 6. Extract DEGs for groups:
+# 7. Extract DEGs within each comparison individually
+# 8. Save to TSV
+# 9. Making a plot 
+
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-=
 # DESeq 2 for tumor stage - Sabya
 # 1. change variables from chracters to factors for tumor
 metadata.subset$Tumor_stage <- as.factor(metadata.subset$Tumor_stage)
 
 # 2. construct deseq set for Tumor_stage
 dds_Tumorstage <- DESeqDataSetFromMatrix(countData = raw_counts,
-                              colData = metadata.subset,
-                              design = ~ Tumor_stage)
+                                         colData = metadata.subset,
+                                         design = ~ Tumor_stage)
 # Quality control
 # Remove genes with low counts
 keep <- rowMeans(raw_counts(dds_Tumorstage)) >=10
 dds_Tumorstage <- dds_Tumorstage[keep,]
 
-
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-=
+# Step 3. GO
 
