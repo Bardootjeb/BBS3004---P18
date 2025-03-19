@@ -225,6 +225,7 @@ ggplot(res_df, aes(x = log2FoldChange, y = -log10(padj), color = significance)) 
   theme(legend.title = element_blank())
 }, "Volcano Plot")
 
+plotMA(res)
 
 #=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 # DESeq2 for every variable
