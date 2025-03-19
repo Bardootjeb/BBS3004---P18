@@ -226,16 +226,9 @@ ggplot(res_df, aes(x = log2FoldChange, y = -log10(padj), color = significance)) 
 }, "Volcano Plot")
 
 
-<<<<<<< HEAD
-
 #=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 # DESeq2 for every variable
 
-=======
-#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-# DESeq2 for every variable
-
->>>>>>> 97ef391a567d1fe6867099b56ffe048d27023cca
 # First replace NA values with "Control" in metadata
 metadata.subset<- metadata.subset%>%
   mutate(across(everything(), ~replace_na(.x, "Control"))) 
@@ -314,7 +307,6 @@ res_control_vs_AC <- results(dds_histology, contrast = c ("Histology", "Control"
 res_control_vs_LC <- results(dds_histology, contrast = c ("Histology", "Control", "3"))
 
 # 7. Extract DEGs within each comparison individually
-<<<<<<< HEAD
 DEGs_control_vs_SC <- res_control_vs_SC[which(res_control_vs_SC$padj < 0.01 & abs(res$log2FoldChange) > 1), ]
 DEGs_control_vs_AC <- res_control_vs_AC[which(res_control_vs_AC$padj < 0.01 & abs(res$log2FoldChange) > 1), ]
 DEGs_control_vs_LC <- res_control_vs_LC[which(res_control_vs_LC$padj < 0.01 & abs(res$log2FoldChange) > 1), ]
@@ -322,7 +314,7 @@ DEGs_control_vs_LC <- res_control_vs_LC[which(res_control_vs_LC$padj < 0.01 & ab
 DEGs_control_vs_SC <- res_control_vs_SC[which(res_control_vs_SC$padj < 0.01 & abs(res_control_vs_SC$log2FoldChange) > 1), ]
 DEGs_control_vs_AC <- res_control_vs_AC[which(res_control_vs_AC$padj < 0.01 & abs(res_control_vs_AC$log2FoldChange) > 1), ]
 DEGs_control_vs_LC <- res_control_vs_LC[which(res_control_vs_LC$padj < 0.01 & abs(res_control_vs_LC$log2FoldChange) > 1), ]
-=======
+
 DEGs_control_vs_SC <- res_control_vs_SC[which(res_control_vs_SC$padj < 0.01 & abs(res_control_vs_SC$log2FoldChange) > 1), ]
 DEGs_control_vs_AC <- res_control_vs_AC[which(res_control_vs_AC$padj < 0.01 & abs(res_control_vs_AC$log2FoldChange) > 1), ]
 DEGs_control_vs_LC <- res_control_vs_LC[which(res_control_vs_LC$padj < 0.01 & abs(res_control_vs_LC$log2FoldChange) > 1), ]
@@ -331,11 +323,9 @@ DEGs_control_vs_LC <- res_control_vs_LC[which(res_control_vs_LC$padj < 0.01 & ab
 write.table(DEGs_control_vs_SC, file= "DEGs_control_vs_SC.tsv", sep = "\t", col.names = F)
 write.table(DEGs_control_vs_AC, file= "DEGs_control_vs_AC.tsv", sep = "\t", col.names = F)
 write.table(DEGs_control_vs_LC, file= "DEGs_control_vs_LC.tsv", sep = "\t", col.names = F)
->>>>>>> 97ef391a567d1fe6867099b56ffe048d27023cca
 
 # 9. Making a plot 
 
-<<<<<<< HEAD
 # 8. Save to TSV
 write.table(DEGs_control_vs_SC, file= "DEGs_control_vs_SC.tsv", sep = "\t", col.names = F)
 write.table(DEGs_control_vs_AC, file= "DEGs_control_vs_AC.tsv", sep = "\t", col.names = F)
@@ -346,7 +336,6 @@ write.table(DEGs_control_vs_LC, file= "DEGs_control_vs_LC.tsv", sep = "\t", col.
 # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-=
 # DESeq2 for sex
 # 1. change variables from chracters to factors for sex
-<<<<<<< HEAD
 
 # New function
 DSQ2("Sex", "male")
@@ -436,7 +425,6 @@ dds_sex <- DESeqDataSetFromMatrix(countData = raw_counts,
                                         colData = metadata.subset,
                                         design = ~ Sex)
 
-=======
 # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-=
 # DESeq2 for sex
 # 1. change variables from chracters to factors for sex
@@ -447,7 +435,7 @@ dds_sex <- DESeqDataSetFromMatrix(countData = raw_counts,
                                         colData = metadata.subset,
                                         design = ~ Sex)
 
->>>>>>> 97ef391a567d1fe6867099b56ffe048d27023cca
+
 # 3. Quality control - Remove genes with low counts
 keep <- rowMeans(counts(dds_sex)) >=10
 dds_sex <- dds_sex[keep,]

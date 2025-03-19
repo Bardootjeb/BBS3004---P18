@@ -15,9 +15,7 @@ save.pdf <- function(plot_function, filename) {
 }
 
 #=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-<<<<<<< HEAD
 # Making a function to automate the deseq2 analysis
-
 DSQ2 <- function(variable, ref_level) {
   
   # Convert the variable to a factor
@@ -26,18 +24,6 @@ DSQ2 <- function(variable, ref_level) {
   # Construct DESeqDataSet object
   dds <- DESeqDataSetFromMatrix(countData = raw_counts,
                                 colData = metadata.subset,
-=======
-# Making a function 
-
-DSQ2 <- function(count_data, metadata, variable, ref_level, output_prefix) {
-  
-  # Convert the variable to a factor
-  metadata[[variable]] <- as.factor(metadata[[variable]])
-  
-  # Construct DESeqDataSet object
-  dds <- DESeqDataSetFromMatrix(countData = count_data,
-                                colData = metadata,
->>>>>>> 97ef391a567d1fe6867099b56ffe048d27023cca
                                 design = as.formula(paste("~", variable)))
   
   # Quality control - Remove genes with low counts
@@ -51,7 +37,6 @@ DSQ2 <- function(count_data, metadata, variable, ref_level, output_prefix) {
   dds <- DESeq(dds)
   
   # Get levels for comparison
-<<<<<<< HEAD
   levels_list <- levels(metadata.subset[[variable]])
   
   # Create file to store results
@@ -59,10 +44,7 @@ DSQ2 <- function(count_data, metadata, variable, ref_level, output_prefix) {
   if (!dir.exists(variable)) {
     dir.create(variable)
   }
-=======
-  levels_list <- levels(metadata[[variable]])
->>>>>>> 97ef391a567d1fe6867099b56ffe048d27023cca
-  
+
   # Extract DEGs for all comparisons
   deg_results <- list()
   for (lvl in levels_list) {
@@ -71,19 +53,11 @@ DSQ2 <- function(count_data, metadata, variable, ref_level, output_prefix) {
       degs <- res[which(res$padj < 0.01 & abs(res$log2FoldChange) > 1), ]
       
       # Save results to file
-<<<<<<< HEAD
       output_file <- file.path(variable, paste0(variable, "_", ref_level, "_vs_", lvl, ".tsv"))
       write.table(degs, file = output_file, sep = "\t", col.names = TRUE, row.names = TRUE)
       
       # Store results in a list
       deg_results[[paste0(ref_level, "_vs_", lvl)]] <- degs
-=======
-      output_file <- paste0(output_prefix, "_", ref_level, "_vs_", lvl, ".tsv")
-      write.table(degs, file = output_file, sep = "\t", col.names = TRUE, row.names = TRUE)
-      
-      # Store results in a list
-      variable_results[[paste0(ref_level, "_vs_", lvl)]] <<- degs
->>>>>>> 97ef391a567d1fe6867099b56ffe048d27023cca
     }
   }
   
