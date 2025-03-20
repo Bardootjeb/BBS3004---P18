@@ -7,7 +7,7 @@ save.pdf <- function(plot_function, filename) {
   # Open the PDF device to save the plot
   pdf(pdf_file)
   # Call the plot function to create the plot
-  plot_function()
+  print(plot_function())
   # Close the PDF device (this finalizes and writes the plot to the file)
   dev.off()
   # Inform the user that the plot has been saved
@@ -16,7 +16,7 @@ save.pdf <- function(plot_function, filename) {
 
 #=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 # Making a function to automate the deseq2 analysis
-DSQ2 <- function(variable, ref_level) {
+DSQ2 <- function(variable, ref_level){
   
   # Convert the variable to a factor
   metadata.subset[[variable]] <- as.factor(metadata.subset[[variable]])
@@ -58,8 +58,33 @@ DSQ2 <- function(variable, ref_level) {
       
       # Store results in a list
       deg_results[[paste0(ref_level, "_vs_", lvl)]] <- degs
+      
+      # Generate volcano plot
+      plot_volcano(res, title = paste0(variable, "_", ref_level, "_vs_", lvl))
     }
   }
   
   return(deg_results)
+}
+
+#=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+# Function to create a volcano plot of the degs
+
+plot_volcano <- function(res, title) {
+  save.pdf(function(){
+  res_df <- as.data.frame(res)
+  res_df$significance <- ifelse(res_df$padj < 0.01 & abs(res_df$log2FoldChange) > 1,
+                                ifelse(res_df$log2FoldChange > 1, "Upregulated", "Downregulated"),
+                                "Not Significant")
+  
+  ggplot(res_df, aes(x = log2FoldChange, y = -log10(padj), color = significance)) +
+    geom_point(alpha = 0.6) +
+    geom_vline(xintercept = c(-1, 1), linetype = "dotted", color = "black") +  # Vertical cutoff lines
+    geom_hline(yintercept = -log10(0.01), linetype = "dotted", color = "black") +  # Horizontal cutoff line
+    scale_color_manual(values = c("Upregulated" = "red", "Downregulated" = "blue", "Not Significant" = "grey")) +
+    theme_minimal() +
+    labs(title = title, x = "Log2 Fold Change", y = "-Log10 Adjusted P-Value") +
+    theme(legend.title = element_blank())
+  }, title)
 }
