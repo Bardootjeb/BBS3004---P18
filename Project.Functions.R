@@ -16,14 +16,14 @@ save.pdf <- function(plot_function, filename) {
 
 #=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 # Making a function to automate the deseq2 analysis
-DSQ2 <- function(variable, ref_level){
+DSQ2 <- function(variable, ref_level, countdata, metadata){
   
   # Convert the variable to a factor
-  metadata.subset[[variable]] <- as.factor(metadata.subset[[variable]])
+  metadata[[variable]] <- as.factor(metadata[[variable]])
   
   # Construct DESeqDataSet object
-  dds <- DESeqDataSetFromMatrix(countData = raw_counts,
-                                colData = metadata.subset,
+  dds <- DESeqDataSetFromMatrix(countData = countdata,
+                                colData = metadata,
                                 design = as.formula(paste("~", variable)))
   
   # Quality control - Remove genes with low counts
@@ -37,7 +37,7 @@ DSQ2 <- function(variable, ref_level){
   dds <- DESeq(dds)
   
   # Get levels for comparison
-  levels_list <- levels(metadata.subset[[variable]])
+  levels_list <- levels(metadata[[variable]])
   
   # Create file to store results
   # Ensure the output directory exists

@@ -29,10 +29,10 @@ require(ggplot2)
 require(dplyr)
 require(GEOquery)
 require(tidyr)
+require(clusterProfiler)
 
   ## I think we dont use these three packages ~ Bart
 # require(pheatmap)
-# require(clusterProfiler) this one is used for funcional enrichtment analysis, yet we didnt use it
 # require(org.Hs.eg.db)
 
 
@@ -430,11 +430,20 @@ oldest <- colData %>% filter(Age >= (max_age - 10))
 selected_samples <- bind_rows(youngest, oldest)
 
 # Convert Age into categorical variable
-selected_samples$Age <- ifelse(selected_samples$Age <= (min_age + 10), "Young", "Old")
-selected_samples$Age <- factor(selected_samples$Age, levels = c("Young", "Old"))
+selected_samples$AgeGroup <- ifelse(selected_samples$Age <= (min_age + 10), "Young", "Old")
+selected_samples$AgeGroup <- factor(selected_samples$AgeGroup, levels = c("Young", "Old"))
+
+# Raw counts have to be adjusted
+RCA <- raw_counts[, colnames(raw_counts) %in% selected_samples$Sample]
+
+# Set row names of metadata to Sample IDs
+rownames(selected_samples) <- selected_samples$Sample  
+
+# Ensure RCA and metadata have the same order  
+selected_samples <- selected_samples[colnames(RCA), ]
 
 # function to analyse the rest automatically
-DSQ2("Age", "45")
+DSQ2("AgeGroup", "Young", RCA, selected_samples)
 
 # Subset count data to include only selected samples
 RCA_subset <- raw_counts[, rownames(selected_samples)]
