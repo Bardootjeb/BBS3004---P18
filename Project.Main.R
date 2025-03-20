@@ -22,16 +22,18 @@ if (!requireNamespace(packages)) {
 # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 # Step 1. Preparatory Analysis
 
-# Source files and data
+# Source files and require data
 source("Project.Functions.R")
 require(DESeq2)
 require(ggplot2)
 require(dplyr)
-require(pheatmap)
-require(clusterProfiler)
-require(org.Hs.eg.db)
 require(GEOquery)
 require(tidyr)
+
+  ## I think we dont use these three packages ~ Bart
+# require(pheatmap)
+# require(clusterProfiler) this one is used for funcional enrichtment analysis, yet we didnt use it
+# require(org.Hs.eg.db)
 
 
 # Load FPKM normalized data 
@@ -83,14 +85,14 @@ express<- reshape2::melt(express, id.vars = "Gene", variable.name = "Sample",
                          value.name = "Expression")
 
 # Merge with metadata
-expression <- merge(express, metadata.subset, by = "Sample", all.x = TRUE)
+express <- merge(express, metadata.subset, by = "Sample", all.x = TRUE)
 
 # Plot expression levels of selected genes
 # 3 genes separately in 3 plots
 gene_colors <- c("pink", "lightblue", "lightgreen")  #create colour data
 names(gene_colors) <- interest.genes  #assign a colour to each gene of interest
 
-for(i in interest.genes){eplot <- ggplot(expression %>% filter(Gene == i), aes(x = Sample, y = Expression, fill = Gene)) +
+for(i in interest.genes){eplot <- ggplot(express %>% filter(Gene == i), aes(x = Sample, y = Expression, fill = Gene)) +
   geom_col(position = "dodge", fill = gene_colors[i]) +
   facet_wrap(~ Gene, scales = "free_y") +
   coord_flip() +  # Flip x and y axes
@@ -101,7 +103,8 @@ for(i in interest.genes){eplot <- ggplot(expression %>% filter(Gene == i), aes(x
 print(eplot)}
 
 # 3 genes together in one plot
-ggplot(expression, aes(x = Sample, y = Expression, fill = Gene)) +
+save.pdf(function(){
+ggplot(express, aes(x = Sample, y = Expression, fill = Gene)) +
   geom_bar(stat = "identity", position = "dodge") +
   facet_wrap(~ Gene, scales = "free_y") +  # Separate plots per gene
   theme_minimal() +
@@ -109,9 +112,11 @@ ggplot(expression, aes(x = Sample, y = Expression, fill = Gene)) +
        x = "Sample",
        y = "Expression Level") +
   theme(axis.text.x = element_text(angle = 90, hjust = 1))  # Rotate sample labels
+}, "Gene Expression")
 
 # Boxplot of gene expression grouped by source 
-ggplot(expression, aes(x = Source, y = Expression, fill = Source)) +
+save.pdf(function(){
+ggplot(express, aes(x = Source, y = Expression, fill = Source)) +
   geom_boxplot(alpha = 0.7, outlier.shape = NA) +  # Transparent boxplot
   geom_jitter(width = 0.2, alpha = 0.6) +  # Adds individual points for visibility
   facet_wrap(~ Gene, scales = "free_y") +  # Separate plots for each gene
@@ -120,9 +125,11 @@ ggplot(expression, aes(x = Source, y = Expression, fill = Source)) +
        x = "Source",
        y = "Expression Level") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))  # Rotate labels for readability
-
+}, "Boxplot; Source")
+  
 # Boxplot of gene expression grouped by sex
-ggplot(expression, aes(x = Sex, y = Expression, fill = Sex)) +
+save.pdf(function(){
+ggplot(express, aes(x = Sex, y = Expression, fill = Sex)) +
   geom_boxplot(alpha = 0.7, outlier.shape = NA) +  # Transparent boxplot
   geom_jitter(width = 0.2, alpha = 0.6) +  # Adds individual points for visibility
   facet_wrap(~ Gene, scales = "free_y") +  # Separate plots for each gene
@@ -131,9 +138,11 @@ ggplot(expression, aes(x = Sex, y = Expression, fill = Sex)) +
        x = "Sex",
        y = "Expression Level") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))  # Rotate labels for readability
-
+}, "Boxplot; Sex")
+  
 # Boxplot of gene expression grouped by smoking status
-ggplot(expression, aes(x = Smoking_Status, y = Expression, fill = Smoking_Status)) +
+save.pdf(function(){
+ggplot(express, aes(x = Smoking_Status, y = Expression, fill = Smoking_Status)) +
   geom_boxplot(alpha = 0.7, outlier.shape = NA) +  # Transparent boxplot
   geom_jitter(width = 0.2, alpha = 0.6) +  # Adds individual points for visibility
   facet_wrap(~ Gene, scales = "free_y") +  # Separate plots for each gene
@@ -142,6 +151,7 @@ ggplot(expression, aes(x = Smoking_Status, y = Expression, fill = Smoking_Status
        x = "Smoking Status",
        y = "Expression Level") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))  # Rotate labels for readability
+}, "Boxplot; Smoking Status")
 
 # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-=
 # Step 2. Differential Gene Expression Analysis
@@ -209,6 +219,8 @@ write.table(deg_genes, file= "Significant_DEGs.tsv", sep = "\t", col.names = F)
 # Convert results to a dataframe
 res_df <- as.data.frame(res)
 
+summary(res_df)
+
 # Create a column for significance
 res_df$significance <- ifelse(res_df$padj < 0.01 & abs(res_df$log2FoldChange) > 1,
                               ifelse(res_df$log2FoldChange > 1, "Upregulated", "Downregulated"),
@@ -217,12 +229,16 @@ print(res_df$significance)
 
 # Plot Volcano Plot
 save.pdf(function(){
-ggplot(res_df, aes(x = log2FoldChange, y = -log10(padj), color = significance)) +
-  geom_point(alpha = 0.6) +
-#  scale_color_manual(values = c("Upregulated" = "red", "Downregulated" = "blue", "Not Significant" = "grey")) +
-  theme_minimal() +
-  labs(title = "Volcano Plot of DEGs in NSCLC Tissue vs. Normal Tissue ", x = "Log2 Fold Change", y = "-Log10 Adjusted P-Value") +
-  theme(legend.title = element_blank())
+  ggplot(res_df, aes(x = log2FoldChange, y = -log10(padj), color = significance)) +
+    geom_point(alpha = 0.6) +
+    geom_vline(xintercept = c(-1, 1), linetype = "dotted", color = "black") +  # Vertical cutoff lines
+    geom_hline(yintercept = -log10(0.01), linetype = "dotted", color = "black") +  # Horizontal cutoff line
+    scale_color_manual(values = c("Upregulated" = "red", "Downregulated" = "blue", "Not Significant" = "grey")) +
+    theme_minimal() +
+    labs(title = "Volcano Plot of DEGs in NSCLC Tissue vs. Normal Tissue", 
+         x = "Log2 Fold Change", 
+         y = "-Log10 Adjusted P-Value") +
+    theme(legend.title = element_blank())
 }, "Volcano Plot")
 
 plotMA(res)
@@ -234,11 +250,14 @@ plotMA(res)
 metadata.subset<- metadata.subset%>%
   mutate(across(everything(), ~replace_na(.x, "Control"))) 
 
-DSQ2(raw_counts, metadata.subset, "Smoking_Status", 3, "Smoking")
-
 # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-=
 # DESeq2 for smoking - Anne fleur
 # 1. change variables from chracters to factors for 'smoking status' (or gender etc.) 
+
+# Function to get the results for smoking
+DSQ2("Smoking_Status", 3)
+
+ ## The function makes the rest of the code obsolete
 metadata.subset$Smoking_Status <- as.factor(metadata.subset$Smoking_Status)
 
 # 2. Construct a DESeqDataSet object
@@ -271,24 +290,29 @@ write.table(DEGs_never_vs_current, file= "DEGs_never_vs_current.tsv", sep = "\t"
 write.table(DEGs_never_vs_ex, file= "DEGs_never_vs_ex.tsv", sep = "\t", col.names = F)
 
 # 9. Making a plot 
+plot_volcano(res_ex_vs_current, "Volcano plot Ex vs Current Smokers")
 
 # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-=
 # DESeq 2 for histology - Silke
 # 1. change variables from characters to factors for 'histology' 
+
+# Function to get the results for smoking
+DSQ2("Histology", "Control")
+
 metadata.subset$Histology <- as.factor(metadata.subset$Histology)
 
 # 2. Construct a DESeqDataSet object
 dds_histology <- DESeqDataSetFromMatrix(countData = raw_counts,
-                                      colData = metadata.subset,
-                                      design = ~ Histology)
+                                        colData = metadata.subset,
+                                        design = ~ Histology)
 
 # 3. Quality control - Remove genes with low counts
 keep <- rowMeans(counts(dds_histology)) >=10
 dds_histology <- dds_histology[keep,]
-                 
+
 # 4. Set 'control' as the Reference
 dds_histology$Histology <- relevel(dds_histology$Histology, ref = "Control")
-                 
+
 # 5. Run DESeq2
 dds_histology <- DESeq(dds_histology) 
 
@@ -298,6 +322,14 @@ res_control_vs_AC <- results(dds_histology, contrast = c ("Histology", "Control"
 res_control_vs_LC <- results(dds_histology, contrast = c ("Histology", "Control", "3"))
 
 # 7. Extract DEGs within each comparison individually
+DEGs_control_vs_SC <- res_control_vs_SC[which(res_control_vs_SC$padj < 0.01 & abs(res$log2FoldChange) > 1), ]
+DEGs_control_vs_AC <- res_control_vs_AC[which(res_control_vs_AC$padj < 0.01 & abs(res$log2FoldChange) > 1), ]
+DEGs_control_vs_LC <- res_control_vs_LC[which(res_control_vs_LC$padj < 0.01 & abs(res$log2FoldChange) > 1), ]
+
+DEGs_control_vs_SC <- res_control_vs_SC[which(res_control_vs_SC$padj < 0.01 & abs(res_control_vs_SC$log2FoldChange) > 1), ]
+DEGs_control_vs_AC <- res_control_vs_AC[which(res_control_vs_AC$padj < 0.01 & abs(res_control_vs_AC$log2FoldChange) > 1), ]
+DEGs_control_vs_LC <- res_control_vs_LC[which(res_control_vs_LC$padj < 0.01 & abs(res_control_vs_LC$log2FoldChange) > 1), ]
+
 DEGs_control_vs_SC <- res_control_vs_SC[which(res_control_vs_SC$padj < 0.01 & abs(res_control_vs_SC$log2FoldChange) > 1), ]
 DEGs_control_vs_AC <- res_control_vs_AC[which(res_control_vs_AC$padj < 0.01 & abs(res_control_vs_AC$log2FoldChange) > 1), ]
 DEGs_control_vs_LC <- res_control_vs_LC[which(res_control_vs_LC$padj < 0.01 & abs(res_control_vs_LC$log2FoldChange) > 1), ]
@@ -309,15 +341,26 @@ write.table(DEGs_control_vs_LC, file= "DEGs_control_vs_LC.tsv", sep = "\t", col.
 
 # 9. Making a plot 
 
+# 8. Save to TSV
+write.table(DEGs_control_vs_SC, file= "DEGs_control_vs_SC.tsv", sep = "\t", col.names = F)
+write.table(DEGs_control_vs_AC, file= "DEGs_control_vs_AC.tsv", sep = "\t", col.names = F)
+write.table(DEGs_control_vs_LC, file= "DEGs_control_vs_LC.tsv", sep = "\t", col.names = F)
+
+# 9. Making a plot 
+
 # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-=
 # DESeq2 for sex
 # 1. change variables from chracters to factors for sex
+
+# New function
+DSQ2("Sex", "male")
+
 metadata.subset$Sex <- as.factor(metadata.subset$Sex)
 
 # 2. Construct a DESeqDataSet object
 dds_sex <- DESeqDataSetFromMatrix(countData = raw_counts,
-                                        colData = metadata.subset,
-                                        design = ~ Sex)
+                                  colData = metadata.subset,
+                                  design = ~ Sex)
 
 # 3. Quality control - Remove genes with low counts
 keep <- rowMeans(counts(dds_sex)) >=10
@@ -333,7 +376,7 @@ dds_sex <- DESeq(dds_sex)
 res_male_vs_female <- results(dds_sex, contrast = c ("Sex", "male", "female"))
 
 # 7. Extract DEGs within each comparison individually
-DEGs_male_vs_female <- res_male_vs_female[which(res_male_vs_female$padj < 0.01 & abs(res_male_vs_female$log2FoldChange) > 1), ]
+DEGs_male_vs_female <- res_male_vs_female[which(res_male_vs_female$padj < 0.01 & abs(res$log2FoldChange) > 1), ]
 
 # 8. Save to TSV
 write.table(DEGs_male_vs_female, file= "DEGs_male_vs_female.tsv", sep = "\t", col.names = F)
@@ -342,13 +385,16 @@ write.table(DEGs_male_vs_female, file= "DEGs_male_vs_female.tsv", sep = "\t", co
 
 # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-=
 # DESeq2 for performance 
+
+DSQ2("Performance", "0")
+
 # 1. change variables from chracters to factors for performance
 metadata.subset$Performance <- as.factor(metadata.subset$Performance)
 
 # 2. Construct a DESeqDataSet object
 dds_performance <- DESeqDataSetFromMatrix(countData = raw_counts,
-                                  colData = metadata.subset,
-                                  design = ~ Performance)
+                                          colData = metadata.subset,
+                                          design = ~ Performance)
 # 3. Quality control - Remove genes with low counts
 keep <- rowMeans(counts(dds_performance)) >=10
 dds_performance <- dds_performance[keep,]
@@ -366,16 +412,52 @@ dds_performance <- DESeq(dds_performance)
 
 # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-=
 # DESeq2 for age
-# 1. change variables from chracters to factors for performance 
-metadata.subset$Age <- as.factor(metadata.subset$Age)
 
-# 2. Construct a DESeqDataSet object
-dds_age <- DESeqDataSetFromMatrix(countData = raw_counts,
-                                         colData = metadata.subset,
-                                         design = ~ Age)
+# Sort the dataset by Age
+colData <- metadata.subset %>% arrange(Age)
+
+# Assign variables as numeric
+colData$Age <- as.numeric(colData$Age)
+
+# Find the minimum and maximum ages
+min_age <- min(colData$Age, na.rm = TRUE)  # Ensure NA values don't break it
+max_age <- max(colData$Age, na.rm = TRUE)
+
+# Filter for people within the youngest and oldest 10 year age range
+youngest <- colData %>% filter(Age <= (min_age + 10))
+oldest <- colData %>% filter(Age >= (max_age - 10))
+
+# Combine the selected groups
+selected_samples <- bind_rows(youngest, oldest)
+
+# Convert Age into categorical variable
+selected_samples$Age <- ifelse(selected_samples$Age <= (min_age + 10), "Young", "Old")
+selected_samples$Age <- factor(selected_samples$Age, levels = c("Young", "Old"))
+
+# function to analyse the rest automatically
+DSQ2("Age", "45")
+
+# Subset count data to include only selected samples
+RCA_subset <- raw_counts[, rownames(selected_samples)]
+
+# Create DESeq2 dataset
+dds_age <- DESeqDataSetFromMatrix(countData = RCA_subset,
+                              colData = selected_samples,
+                              design = ~ AgeGroup)
+
 # 3. Quality control - Remove genes with low counts
 keep <- rowMeans(counts(dds_age)) >=10
 dds_age <- dds_age[keep,]
+
+# Run DESeq2
+dds <- DESeq(dds)
+
+# Get results comparing Old vs. Young
+res <- results(dds, contrast = c("AgeGroup", "Old", "Young"))
+
+# View top differentially expressed genes
+resOrdered <- res[order(res$padj), ]
+head(resOrdered)
 
 # 4. Set '45 = youngest age' as the Reference ???
 
@@ -392,8 +474,8 @@ metadata.subset$Tumor_stage <- as.factor(metadata.subset$Tumor_stage)
 
 # 2. construct deseq set for Tumor_stage
 dds_Tumorstage <- DESeqDataSetFromMatrix(countData = raw_counts,
-                              colData = metadata.subset,
-                              design = ~ Tumor_stage)
+                                         colData = metadata.subset,
+                                         design = ~ Tumor_stage)
 # Quality control
 # Remove genes with low counts
 keep <- rowMeans(raw_counts(dds_Tumorstage)) >=10
