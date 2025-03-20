@@ -241,6 +241,7 @@ save.pdf(function(){
     theme(legend.title = element_blank())
 }, "Volcano Plot")
 
+plotMA(res)
 
 #=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 # DESeq2 for every variable
