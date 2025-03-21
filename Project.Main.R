@@ -487,9 +487,77 @@ dds_Tumorstage <- DESeqDataSetFromMatrix(countData = raw_counts,
                                          design = ~ Tumor_stage)
 # Quality control
 # Remove genes with low counts
-keep <- rowMeans(raw_counts(dds_Tumorstage)) >=10
-dds_Tumorstage <- dds_Tumorstage[keep,]
+keep <- rowMeans(counts(dds_Tumorstage)) >= 10
+dds_Tumorstage <- dds_Tumorstage[keep, ]
 
+# 4. Set 'control' as the Reference
+dds_Tumorstage$Tumor_stage <- relevel(dds_Tumorstage$Tumor_stage, ref = "Control")
+
+
+dds$Tumor_stage <- recode_factor(as.character(dds$Tumor_stage),
+                                 "1" = "Stage 1",
+                                 "2" = "Stage 1",
+                                 "3" = "Stage 2",
+                                 "4" = "Stage 2",
+                                 "5" = "Stage 3",
+                                 "6" = "Stage 3",
+                                 "7" = "Stage 4")
+
+dds$Tumor_stage <- factor(dds$Tumor_stage,
+                          levels = c("Control", "Stage 1", "Stage 2", "Stage 3", "Stage 4"))
+
+# 5. Run DESeq2
+dds_Tumorstage <- DESeq(dds_Tumorstage) 
+
+# 6. Extract DEGs for groups: current smokers, ex smokers, never smokers 
+res_control_vs_stage1 <- results(dds_Tumorstage, contrast = c ("Tumor_stage", "Control", "1"))
+res_control_vs_stage2 <- results(dds_Tumorstage, contrast = c ("Tumor_stage", "Control", "2"))
+res_control_vs_stage3 <- results(dds_Tumorstage, contrast = c ("Tumor_stage", "Control", "3"))
+res_control_vs_stage4 <- results(dds_Tumorstage, contrast = c ("Tumor_stage", "Control", "4"))
+
+tumor_res <- c(res_control_vs_stage1, res_control_vs_stage2, res_control_vs_stage3, res_control_vs_stage4)
+
+# 7. Extract DEGs within each comparison individually
+DEGs_control_vs_stage1 <- res_control_vs_stage1[which(res_control_vs_stage1$padj < 0.01 & abs(res_control_vs_stage1$log2FoldChange) > 1), ]
+DEGs_control_vs_stage2 <- res_control_vs_stage2[which(res_control_vs_stage2$padj < 0.01 & abs(res_control_vs_stage2$log2FoldChange) > 1), ]
+DEGs_control_vs_stage3 <- res_control_vs_stage3[which(res_control_vs_stage3$padj < 0.01 & abs(res_control_vs_stage3$log2FoldChange) > 1), ]
+DEGs_control_vs_stage4 <- res_control_vs_stage4[which(res_control_vs_stage4$padj < 0.01 & abs(res_control_vs_stage4$log2FoldChange) > 1), ]
+
+# 8 Check how many significant DEGs were found
+nrow(DEGs_control_vs_stage4)
+
+
+# 9making plots
+
+# Convert results to a dataframe
+res_tumorstage <- as.data.frame(res_tumorstage)
+
+
+
+# Create a column for significance
+res_control_vs_stage1$significance <- ifelse(res_$padj < 0.01 & abs(res_df$log2FoldChange) > 1,
+                                             ifelse(res_df$log2FoldChange > 1, "Upregulated", "Downregulated"),
+                                             "Not Significant")
+print(res_df$significance)
+
+# Plot Volcano Plot
+save.pdf(function(){
+  ggplot(res_df, aes(x = log2FoldChange, y = -log10(padj), color = significance)) +
+    geom_point(alpha = 0.6) +
+    geom_vline(xintercept = c(-1, 1), linetype = "dotted", color = "black") +  # Vertical cutoff lines
+    geom_hline(yintercept = -log10(0.01), linetype = "dotted", color = "black") +  # Horizontal cutoff line
+    scale_color_manual(values = c("Upregulated" = "red", "Downregulated" = "blue", "Not Significant" = "grey")) +
+    theme_minimal() +
+    labs(title = "Volcano Plot of DEGs in NSCLC Tissue vs. Normal Tissue", 
+         x = "Log2 Fold Change", 
+         y = "-Log10 Adjusted P-Value") +
+    theme(legend.title = element_blank())
+}, "Volcano Plot")
+
+plot_volcano(res_control_vs_stage1, "tumorstage 1 vs control")
+plot_volcano(res_control_vs_stage2, "tumorstage 2 vs control")
+plot_volcano(res_control_vs_stage3, "tumorstage 3 vs control")
+plot_volcano(res_control_vs_stage4, "tumorstage 4 vs control")
 # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-=
-# Step 3. GO
 
+  # Step 3. GO
