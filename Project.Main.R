@@ -563,3 +563,29 @@ plot_volcano(res_control_vs_stage4, "tumorstage 4 vs control")
   # Step 3. GO
 
 heatmap_plot(raw_counts, "sex", DEGs_male_vs_female)
+
+
+# heatmap for 41 DEGs in NSCLC vs non-malignant, significantly associated with lung cancer 
+
+# insert MOET output, ie the genes from the DEGs associated with lungdisease 
+moetgenessource <- read.table("MOET genes lung cancer source ensg.txt", header = FALSE, stringsAsFactors = FALSE)
+colnames(moetgenessource) <- c("Gene_Symbol") 
+
+# check overlap with expression data 
+overlap_moetgenessource <- moetgenessource$Gene_Symbol[moetgenessource$Gene_Symbol %in% rownames(raw_counts)]
+
+# Subset the data for MOET genes
+expression_moetgenessource <- raw_counts[rownames(raw_counts) %in% overlap_moetgenessource, ]
+
+# normalize it
+log_overlap_moetgenessource <- log2(as.matrix(expression_moetgenessource) + 1)
+
+# heatmap
+pheatmap(log_overlap_moetgenessource, 
+         cluster_rows = TRUE, 
+         cluster_cols = TRUE, 
+         scale = "row",
+         show_rownames = TRUE, 
+         show_colnames = FALSE, 
+         main = "Heatmap of MOET Genes in Lung Cancer")
+
