@@ -19,7 +19,8 @@ save.pdf <- function(plot_function, filename) {
 DSQ2 <- function(variable, ref_level, countdata, metadata){
   
   # Convert the variable to a factor
-  metadata[[variable]] <- as.factor(metadata[[variable]])
+  metadata[[variable]] <- factor(metadata[[variable]])
+  print(levels(metadata[[variable]]))  # Debugging: Check factor levels
   
   # Construct DESeqDataSet object
   dds <- DESeqDataSetFromMatrix(countData = countdata,
@@ -32,6 +33,7 @@ DSQ2 <- function(variable, ref_level, countdata, metadata){
   
   # Set reference level
   dds[[variable]] <- relevel(dds[[variable]], ref = ref_level)
+  print(levels(dds[[variable]]))
   
   # Run DESeq2
   dds <- DESeq(dds)
