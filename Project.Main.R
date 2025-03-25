@@ -187,6 +187,7 @@ dds <- dds[keep,]
 print(dds)
 
 # Set the Source as factor instead of character
+
 metadata.subset$Source <- as.factor(metadata.subset$Source)
 
 # Sets the human non-malignant tissue as the base for when comparing
