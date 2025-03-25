@@ -19,7 +19,8 @@ save.pdf <- function(plot_function, filename) {
 DSQ2 <- function(variable, ref_level, countdata, metadata){
   
   # Convert the variable to a factor
-  metadata[[variable]] <- as.factor(metadata[[variable]])
+  metadata[[variable]] <- factor(metadata[[variable]])
+  print(levels(metadata[[variable]]))  # Debugging: Check factor levels
   
   # Construct DESeqDataSet object
   dds <- DESeqDataSetFromMatrix(countData = countdata,
@@ -32,6 +33,7 @@ DSQ2 <- function(variable, ref_level, countdata, metadata){
   
   # Set reference level
   dds[[variable]] <- relevel(dds[[variable]], ref = ref_level)
+  print(levels(dds[[variable]]))
   
   # Run DESeq2
   dds <- DESeq(dds)
@@ -87,20 +89,4 @@ plot_volcano <- function(res, title) {
     labs(title = title, x = "Log2 Fold Change", y = "-Log10 Adjusted P-Value") +
     theme(legend.title = element_blank())
   }, title)
-}
-
-# Function to create heatmaps
-heatmap_plot <- function(counts_data, variable, DEGs){
-  
-# Subset expression data for DEGs related to your variable
-heatmap_data <- counts_data[rownames(counts_data) %in% rownames(DEGs), ]
-
-# Scale the data (row-wise normalization)
-heatmap_data <- t(scale(t(heatmap_data)))
-
-# Generate heatmap
-pheatmap(heatmap_data, 
-         annotation_col = metadata.subset[variable], 
-         main = "Heatmap of DEGs", variable,
-         color = colorRampPalette(c("blue", "white", "red"))(50))
 }

@@ -29,12 +29,7 @@ require(ggplot2)
 require(dplyr)
 require(GEOquery)
 require(tidyr)
-require(clusterProfiler)
 require(pheatmap)
-
-  ## I think we dont use this package ~ Bart
-# require(org.Hs.eg.db)
-
 
 # Load FPKM normalized data 
 FPKM_data <- read.delim("FPKM_cufflinks.tsv", header=TRUE, 
@@ -163,28 +158,18 @@ raw_counts <- read.delim("Raw_Counts_GSE81089.tsv", header=TRUE,
 # Making sure the row names in metadata.subset matches to column names in raw_counts
 all(colnames(raw_counts) %in% rownames(metadata.subset))
 
-# Check if they are in the same order
-all(colnames(raw_counts) == rownames(metadata.subset))
-
 # Reorder metadata.subset rows to match the column order in raw_counts
 metadata.subset <- metadata.subset[match(colnames(raw_counts), rownames(metadata.subset)), , drop = FALSE]
-
-# Check if they now match
-all(colnames(raw_counts) == rownames(metadata.subset))
 
 # Construct a DESeqDataSet object 
 dds <- DESeqDataSetFromMatrix(countData = raw_counts,
                               colData = metadata.subset,
                               design = ~ Source)
 
-print(dds)
-
 # Quality control
 # Remove genes with low counts
 keep <- rowMeans(counts(dds)) >=10
 dds <- dds[keep,]
-
-print(dds)
 
 # Set the Source as factor instead of character
 metadata.subset$Source <- as.factor(metadata.subset$Source)
@@ -195,14 +180,8 @@ metadata.subset$Source <- relevel(metadata.subset$Source, ref = "Human non-malig
 # Run the DESeq2 differential expression analysis
 dds <- DESeq(dds)
 
-# Print a summary of DESeq2 results
-print(dds)
-
 # Extract results for Malignant Tissue vs. Human Tissue
 res <- results(dds, contrast = c("Source", "Human non-malignant tissue", "Human NSCLC tissue" ))
-
-# View a summary of the results
-summary(res)
 
 # Filter for genes with padj < 0.01 (statistically significant) and log2FoldChange > 1 or < -1 (biologically meaningful)
 deg_genes <- res[which(res$padj < 0.01 & abs(res$log2FoldChange) > 1), ]
@@ -213,19 +192,15 @@ nrow(deg_genes)
 # Save results to a TSV file for further analysis
 write.table(deg_genes, file= "Significant_DEGs.tsv", sep = "\t", col.names = F)
 
-
 #making plots
 
 # Convert results to a dataframe
 res_df <- as.data.frame(res)
 
-summary(res_df)
-
 # Create a column for significance
 res_df$significance <- ifelse(res_df$padj < 0.01 & abs(res_df$log2FoldChange) > 1,
                               ifelse(res_df$log2FoldChange > 1, "Upregulated", "Downregulated"),
                               "Not Significant")
-print(res_df$significance)
 
 # Plot Volcano Plot
 save.pdf(function(){
@@ -241,7 +216,10 @@ save.pdf(function(){
     theme(legend.title = element_blank())
 }, "Volcano Plot")
 
+# Plot MA plot
+save.pdf(function(){
 plotMA(res)
+}, "MA plot")
 
 #=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 # DESeq2 for every variable
@@ -559,9 +537,9 @@ plot_volcano(res_control_vs_stage2, "tumorstage 2 vs control")
 plot_volcano(res_control_vs_stage3, "tumorstage 3 vs control")
 plot_volcano(res_control_vs_stage4, "tumorstage 4 vs control")
 # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-=
-
   # Step 3. GO
 
+<<<<<<< HEAD
 heatmap_plot(raw_counts, "sex", DEGs_male_vs_female)
 
 
@@ -589,3 +567,5 @@ pheatmap(log_overlap_moetgenessource,
          show_colnames = FALSE, 
          main = "Heatmap of MOET Genes in Lung Cancer")
 
+=======
+>>>>>>> ae9d544a686b68b3d8e54a5edda75a28d88c1d04
