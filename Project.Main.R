@@ -30,9 +30,9 @@ require(dplyr)
 require(GEOquery)
 require(tidyr)
 require(clusterProfiler)
+require(pheatmap)
 
-  ## I think we dont use these three packages ~ Bart
-# require(pheatmap)
+  ## I think we dont use this package ~ Bart
 # require(org.Hs.eg.db)
 
 
@@ -256,7 +256,7 @@ metadata.subset<- metadata.subset%>%
 # 1. change variables from chracters to factors for 'smoking status' (or gender etc.) 
 
 # Function to get the results for smoking
-DSQ2("Smoking_Status", 3)
+DSQ2("Smoking_Status", 3, raw_counts, metadata.subset)
 
  ## The function makes the rest of the code obsolete
 metadata.subset$Smoking_Status <- as.factor(metadata.subset$Smoking_Status)
@@ -562,3 +562,5 @@ plot_volcano(res_control_vs_stage4, "tumorstage 4 vs control")
 # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-=
 
   # Step 3. GO
+
+heatmap_plot(raw_counts, "sex", DEGs_male_vs_female)

@@ -88,3 +88,19 @@ plot_volcano <- function(res, title) {
     theme(legend.title = element_blank())
   }, title)
 }
+
+# Function to create heatmaps
+heatmap_plot <- function(counts_data, variable, DEGs){
+  
+# Subset expression data for DEGs related to your variable
+heatmap_data <- counts_data[rownames(counts_data) %in% rownames(DEGs), ]
+
+# Scale the data (row-wise normalization)
+heatmap_data <- t(scale(t(heatmap_data)))
+
+# Generate heatmap
+pheatmap(heatmap_data, 
+         annotation_col = metadata.subset[variable], 
+         main = "Heatmap of DEGs", variable,
+         color = colorRampPalette(c("blue", "white", "red"))(50))
+}
