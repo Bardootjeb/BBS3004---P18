@@ -221,6 +221,16 @@ save.pdf(function(){
 plotMA(res)
 }, "MA plot")
 
+
+# Extract the top 10 upregulated and top 10 downregulated genes 
+top_upregulated_NSCLC <- head(deg_genes[order(-deg_genes$log2FoldChange), ], 10)
+top_downregulated_NSCLC <- head(deg_genes[order(-deg_genes$log2FoldChange), ], 10)
+
+top_upregulated_NSCLC_df <- as.data.frame(top_upregulated_NSCLC)
+top_downregulated_NSCLC_df <- as.data.frame(top_downregulated_NSCLC)
+
+
+
 #=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 # DESeq2 for every variable
 
@@ -602,5 +612,3 @@ pheatmap(log_overlap_moetgenessource,
          show_colnames = FALSE, 
          main = "Heatmap of MOET Genes in Lung Cancer")
 
-=======
->>>>>>> ae9d544a686b68b3d8e54a5edda75a28d88c1d04
