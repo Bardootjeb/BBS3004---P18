@@ -326,6 +326,41 @@ write.table(DEGs_control_vs_LC, file= "DEGs_control_vs_LC.tsv", sep = "\t", col.
 
 # 9. Making a plot 
 
+# DEseq analysis with adenocarcinoma as reference
+
+# Function to get the results for smoking
+DSQ2("Histology", "Control")
+
+metadata.subset$Histology <- as.factor(metadata.subset$Histology)
+
+# 2. Construct a DESeqDataSet object
+dds_histology <- DESeqDataSetFromMatrix(countData = raw_counts,
+                                        colData = metadata.subset,
+                                        design = ~ Histology)
+
+# 3. Quality control - Remove genes with low counts
+keep <- rowMeans(counts(dds_histology)) >=10
+dds_histology <- dds_histology[keep,]
+
+# 4. Set 'control' as the Reference
+dds_histology$Histology <- relevel(dds_histology$Histology, ref = "2")
+
+# 5. Run DESeq2
+dds_histology <- DESeq(dds_histology) 
+
+# 6. Extract DEGs for groups: current smokers, ex smokers, never smokers 
+res_AC_vs_SC <- results(dds_histology, contrast = c ("Histology", "2", "1"))
+res_AC_vs_LC <- results(dds_histology, contrast = c ("Histology", "2", "3"))
+
+# 7. Extract DEGs within each comparison individually
+DEGs_AC_vs_SC <- res_control_vs_SC[which(res_control_vs_SC$padj < 0.01 & abs(res$log2FoldChange) > 1), ]
+DEGs_AC_vs_LC <- res_control_vs_LC[which(res_control_vs_LC$padj < 0.01 & abs(res$log2FoldChange) > 1), ]
+
+DEGs_AC_vs_SC <- res_control_vs_SC[which(res_control_vs_SC$padj < 0.01 & abs(res_control_vs_SC$log2FoldChange) > 1), ]
+DEGs_AC_vs_LC <- res_control_vs_LC[which(res_control_vs_LC$padj < 0.01 & abs(res_control_vs_LC$log2FoldChange) > 1), ]
+
+DEGs_AC_vs_SC <- res_control_vs_SC[which(res_control_vs_SC$padj < 0.01 & abs(res_control_vs_SC$log2FoldChange) > 1), ]
+DEGs_AC_vs_LC <- res_control_vs_LC[which(res_control_vs_LC$padj < 0.01 & abs(res_control_vs_LC$log2FoldChange) > 1), ]
 # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-=
 # DESeq2 for sex
 # 1. change variables from chracters to factors for sex
