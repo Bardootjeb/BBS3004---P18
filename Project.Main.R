@@ -568,12 +568,14 @@ expression_moetgenessource <- raw_counts[rownames(raw_counts) %in% overlap_moetg
 # normalize it
 log_overlap_moetgenessource <- log2(as.matrix(expression_moetgenessource) + 1)
 
+
 # heatmap
 pheatmap(log_overlap_moetgenessource, 
          cluster_rows = TRUE, 
          cluster_cols = TRUE, 
          scale = "row",
          show_rownames = TRUE, 
-         show_colnames = FALSE, 
+         show_colnames = TRUE, 
          main = "Heatmap of MOET Genes in Lung Cancer")
+
 
