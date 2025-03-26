@@ -229,6 +229,10 @@ top_downregulated_NSCLC <- head(deg_genes[order(-deg_genes$log2FoldChange), ], 1
 top_upregulated_NSCLC_df <- as.data.frame(top_upregulated_NSCLC)
 top_downregulated_NSCLC_df <- as.data.frame(top_downregulated_NSCLC)
 
+# upregulated and downregulated genes
+upregulated_deg_genes <- subset(deg_genes, padj < 0.01 & log2FoldChange > 0)
+downregulated_deg_genes <- subset(deg_genes, padj < 0.01 & log2FoldChange < 0)
+
 
 
 #=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
