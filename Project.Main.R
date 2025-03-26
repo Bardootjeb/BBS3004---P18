@@ -371,6 +371,10 @@ DEGs_AC_vs_LC <- res_control_vs_LC[which(res_control_vs_LC$padj < 0.01 & abs(res
 
 DEGs_AC_vs_SC <- res_control_vs_SC[which(res_control_vs_SC$padj < 0.01 & abs(res_control_vs_SC$log2FoldChange) > 1), ]
 DEGs_AC_vs_LC <- res_control_vs_LC[which(res_control_vs_LC$padj < 0.01 & abs(res_control_vs_LC$log2FoldChange) > 1), ]
+
+# write a table for DEGs
+write.table(DEGs_AC_vs_SC, file= "DEGs_AC_vs_SC.tsv", sep = "\t", col.names = F)
+write.table(DEGs_AC_vs_LC, file= "DEGs_AC_vs_LC.tsv", sep = "\t", col.names = F)
 # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-=
 # DESeq2 for sex
 # 1. change variables from chracters to factors for sex
