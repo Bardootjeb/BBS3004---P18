@@ -229,6 +229,10 @@ top_downregulated_NSCLC <- head(deg_genes[order(-deg_genes$log2FoldChange), ], 1
 top_upregulated_NSCLC_df <- as.data.frame(top_upregulated_NSCLC)
 top_downregulated_NSCLC_df <- as.data.frame(top_downregulated_NSCLC)
 
+# upregulated and downregulated genes
+upregulated_deg_genes <- subset(deg_genes, padj < 0.01 & log2FoldChange > 0)
+downregulated_deg_genes <- subset(deg_genes, padj < 0.01 & log2FoldChange < 0)
+
 
 
 #=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -334,7 +338,67 @@ write.table(DEGs_control_vs_SC, file= "DEGs_control_vs_SC.tsv", sep = "\t", col.
 write.table(DEGs_control_vs_AC, file= "DEGs_control_vs_AC.tsv", sep = "\t", col.names = F)
 write.table(DEGs_control_vs_LC, file= "DEGs_control_vs_LC.tsv", sep = "\t", col.names = F)
 
-# 9. Making a plot 
+# upregulated and downregulated genes
+upregulated_control_vs_AC <- subset(DEGs_control_vs_AC, padj < 0.01 & log2FoldChange > 0)
+downregulated_control_vs_AC <- subset(DEGs_control_vs_AC, padj < 0.01 & log2FoldChange < 0)
+
+upregulated_control_vs_SC <- subset(DEGs_control_vs_SC, padj < 0.01 & log2FoldChange > 0)
+downregulated_control_vs_SC <- subset(DEGs_control_vs_SC, padj < 0.01 & log2FoldChange < 0)
+
+upregulated_control_vs_LC <- subset(DEGs_control_vs_LC, padj < 0.01 & log2FoldChange > 0)
+downregulated_control_vs_LC <- subset(DEGs_control_vs_LC, padj < 0.01 & log2FoldChange < 0)
+
+# DEseq analysis with adenocarcinoma as reference
+
+# Function to get the results for smoking
+DSQ2("Histology", "Control")
+
+metadata.subset$Histology <- as.factor(metadata.subset$Histology)
+
+# 2. Construct a DESeqDataSet object
+dds_histology <- DESeqDataSetFromMatrix(countData = raw_counts,
+                                        colData = metadata.subset,
+                                        design = ~ Histology)
+
+# 3. Quality control - Remove genes with low counts
+keep <- rowMeans(counts(dds_histology)) >=10
+dds_histology <- dds_histology[keep,]
+
+# 4. Set 'control' as the Reference
+dds_histology$Histology <- relevel(dds_histology$Histology, ref = "2")
+
+# 5. Run DESeq2
+dds_histology <- DESeq(dds_histology) 
+
+# 6. Extract DEGs for groups: current smokers, ex smokers, never smokers 
+res_AC_vs_SC <- results(dds_histology, contrast = c ("Histology", "2", "1"))
+res_AC_vs_LC <- results(dds_histology, contrast = c ("Histology", "2", "3"))
+
+# 7. Extract DEGs within each comparison individually
+DEGs_AC_vs_SC <- res_control_vs_SC[which(res_control_vs_SC$padj < 0.01 & abs(res$log2FoldChange) > 1), ]
+DEGs_AC_vs_LC <- res_control_vs_LC[which(res_control_vs_LC$padj < 0.01 & abs(res$log2FoldChange) > 1), ]
+
+DEGs_AC_vs_SC <- res_control_vs_SC[which(res_control_vs_SC$padj < 0.01 & abs(res_control_vs_SC$log2FoldChange) > 1), ]
+DEGs_AC_vs_LC <- res_control_vs_LC[which(res_control_vs_LC$padj < 0.01 & abs(res_control_vs_LC$log2FoldChange) > 1), ]
+
+DEGs_AC_vs_SC <- res_control_vs_SC[which(res_control_vs_SC$padj < 0.01 & abs(res_control_vs_SC$log2FoldChange) > 1), ]
+DEGs_AC_vs_LC <- res_control_vs_LC[which(res_control_vs_LC$padj < 0.01 & abs(res_control_vs_LC$log2FoldChange) > 1), ]
+
+# write a table for DEGs
+write.table(DEGs_AC_vs_SC, file= "DEGs_AC_vs_SC.tsv", sep = "\t", col.names = F)
+write.table(DEGs_AC_vs_LC, file= "DEGs_AC_vs_LC.tsv", sep = "\t", col.names = F)
+
+# make a plot
+plot_volcano(res_AC_vs_LC, "Volcano plot AC vs LC")
+plot_volcano(res_AC_vs_SC, "Volcano plot AC vs SC")
+
+# upregulated and downregulated genes
+upregulated_AC_vs_LC <- subset(DEGs_AC_vs_LC, padj < 0.01 & log2FoldChange > 0)
+downregulated_AC_vs_SC <- subset(DEGs_AC_vs_LC, padj < 0.01 & log2FoldChange < 0)
+
+upregulated_AC_vs_LC <- subset(DEGs_AC_vs_LC, padj < 0.01 & log2FoldChange > 0)
+downregulated_AC_vs_SC <- subset(DEGs_AC_vs_LC, padj < 0.01 & log2FoldChange < 0)
+
 
 # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-=
 # DESeq2 for sex
