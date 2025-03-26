@@ -334,7 +334,15 @@ write.table(DEGs_control_vs_SC, file= "DEGs_control_vs_SC.tsv", sep = "\t", col.
 write.table(DEGs_control_vs_AC, file= "DEGs_control_vs_AC.tsv", sep = "\t", col.names = F)
 write.table(DEGs_control_vs_LC, file= "DEGs_control_vs_LC.tsv", sep = "\t", col.names = F)
 
-# 9. Making a plot 
+# upregulated and downregulated genes
+upregulated_control_vs_AC <- subset(DEGs_control_vs_AC, padj < 0.01 & log2FoldChange > 0)
+downregulated_control_vs_AC <- subset(DEGs_control_vs_AC, padj < 0.01 & log2FoldChange < 0)
+
+upregulated_control_vs_SC <- subset(DEGs_control_vs_SC, padj < 0.01 & log2FoldChange > 0)
+downregulated_control_vs_SC <- subset(DEGs_control_vs_SC, padj < 0.01 & log2FoldChange < 0)
+
+upregulated_control_vs_LC <- subset(DEGs_control_vs_LC, padj < 0.01 & log2FoldChange > 0)
+downregulated_control_vs_LC <- subset(DEGs_control_vs_LC, padj < 0.01 & log2FoldChange < 0)
 
 # DEseq analysis with adenocarcinoma as reference
 
@@ -375,6 +383,19 @@ DEGs_AC_vs_LC <- res_control_vs_LC[which(res_control_vs_LC$padj < 0.01 & abs(res
 # write a table for DEGs
 write.table(DEGs_AC_vs_SC, file= "DEGs_AC_vs_SC.tsv", sep = "\t", col.names = F)
 write.table(DEGs_AC_vs_LC, file= "DEGs_AC_vs_LC.tsv", sep = "\t", col.names = F)
+
+# make a plot
+plot_volcano(res_AC_vs_LC, "Volcano plot AC vs LC")
+plot_volcano(res_AC_vs_SC, "Volcano plot AC vs SC")
+
+# upregulated and downregulated genes
+upregulated_AC_vs_LC <- subset(DEGs_AC_vs_LC, padj < 0.01 & log2FoldChange > 0)
+downregulated_AC_vs_SC <- subset(DEGs_AC_vs_LC, padj < 0.01 & log2FoldChange < 0)
+
+upregulated_AC_vs_LC <- subset(DEGs_AC_vs_LC, padj < 0.01 & log2FoldChange > 0)
+downregulated_AC_vs_SC <- subset(DEGs_AC_vs_LC, padj < 0.01 & log2FoldChange < 0)
+
+
 # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-=
 # DESeq2 for sex
 # 1. change variables from chracters to factors for sex
