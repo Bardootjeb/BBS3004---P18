@@ -586,33 +586,51 @@ plot_volcano(res_3_vs_2, "Stage 3 vs Stage 2")
 # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-=
   # Step 3. GO
 
-<<<<<<< HEAD
+# Bart his code (do we still need this?)
 heatmap_plot(raw_counts, "sex", DEGs_male_vs_female)
 
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-=
+# Step 3. GO, heatmap of DEGs in NSCLC samples vs non malignant samples, sig. associated with ....
 
-# heatmap for 41 DEGs in NSCLC vs non-malignant, significantly associated with lung cancer 
-
-# insert MOET output, ie the genes from the DEGs associated with lungdisease 
+# Insert MOET output, ie the genes from the DEGs associated with lungdisease 
 moetgenessource <- read.table("MOET genes lung cancer source ensg.txt", header = FALSE, stringsAsFactors = FALSE)
 colnames(moetgenessource) <- c("Gene_Symbol") 
 
-# check overlap with expression data 
+# Check overlap with expression data 
 overlap_moetgenessource <- moetgenessource$Gene_Symbol[moetgenessource$Gene_Symbol %in% rownames(raw_counts)]
 
 # Subset the data for MOET genes
 expression_moetgenessource <- raw_counts[rownames(raw_counts) %in% overlap_moetgenessource, ]
 
-# normalize it
+# Normalize it
 log_overlap_moetgenessource <- log2(as.matrix(expression_moetgenessource) + 1)
 
-# heatmap
+# Split Heat Map into 2, Healthy & Non-Healthy
+# Separate Tumor (“T”) and Normal (“N”) Samples
+# Select columns ending with "T"
+tumor_samples <- log_overlap_moetgenessource[, grep("T$", colnames(log_overlap_moetgenessource))]
+
+# Select columns ending with "N"
+normal_samples <- log_overlap_moetgenessource[, grep("N$", colnames(log_overlap_moetgenessource))]
+
+### Put them All in One figure 
+# Order columns: Normal (N) first, Tumor (T) second
+ordered_columns <- c(grep("N$", colnames(log_overlap_moetgenessource), value = TRUE), 
+                     grep("T$", colnames(log_overlap_moetgenessource), value = TRUE))
+log_overlap_moetgenessource <- log_overlap_moetgenessource[, ordered_columns]
+
+# Create a column annotation to distinguish Tumor vs. Normal
+sample_types <- ifelse(grepl("T$", colnames(log_overlap_moetgenessource)), "Tumor", "Normal")
+annotation_col <- data.frame(Type = factor(sample_types, levels = c("Normal", "Tumor")))
+rownames(annotation_col) <- colnames(log_overlap_moetgenessource)
+
+# Plot the heatmap
 pheatmap(log_overlap_moetgenessource, 
          cluster_rows = TRUE, 
          cluster_cols = TRUE, 
          scale = "row",
          show_rownames = TRUE, 
-         show_colnames = FALSE, 
-         main = "Heatmap of MOET Genes in Lung Cancer")
-
-=======
->>>>>>> ae9d544a686b68b3d8e54a5edda75a28d88c1d04
+         show_colnames = TRUE, 
+         annotation_col = annotation_col,  # Highlight Tumor vs. Normal
+         gaps_col = length(grep("N$", colnames(log_overlap_moetgenessource))), # Add gap between groups
+         main = "Heatmap of MOET Genes (Normal vs. Tumor)")
