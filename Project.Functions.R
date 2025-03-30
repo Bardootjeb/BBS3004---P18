@@ -51,7 +51,7 @@ DSQ2 <- function(variable, ref_level, countdata, metadata){
   deg_results <- list()
   for (lvl in levels_list) {
     if (lvl != ref_level) {
-      res <- results(dds, contrast = c(variable, ref_level, lvl))
+      res <- results(dds, contrast = c(variable, lvl, ref_level))
       degs <- res[which(res$padj < 0.01 & abs(res$log2FoldChange) > 1), ]
       
       # Save results to file

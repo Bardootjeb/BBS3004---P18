@@ -10,7 +10,7 @@ if (!requireNamespace("BiocManager")) {
 
 # Create vector containing all the packages
 packages <- c("DESeq2", "ggplot2", "dplyr", "pheatmap", 
-"clusterProfiler", "org.Hs.eg.db", "GEOquery")
+"clusterProfiler", "org.Hs.eg.db", "GEOquery", "openxlsx")
 
 # Check if required packages is installed; install it if not
 if (!requireNamespace(packages)) {
@@ -30,6 +30,7 @@ require(dplyr)
 require(GEOquery)
 require(tidyr)
 require(pheatmap)
+library(openxlsx)
 
 # Load FPKM normalized data 
 FPKM_data <- read.delim("FPKM_cufflinks.tsv", header=TRUE, 
@@ -147,7 +148,6 @@ ggplot(express, aes(x = Smoking_Status, y = Expression, fill = Smoking_Status)) 
        y = "Expression Level") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))  # Rotate labels for readability
 }, "Boxplot; Smoking Status")
-
 # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-=
 # Step 2. Differential Gene Expression Analysis
 
@@ -180,8 +180,8 @@ metadata.subset$Source <- relevel(metadata.subset$Source, ref = "Human non-malig
 # Run the DESeq2 differential expression analysis
 dds <- DESeq(dds)
 
-# Extract results for Malignant Tissue vs. Human Tissue
-res <- results(dds, contrast = c("Source", "Human non-malignant tissue", "Human NSCLC tissue" ))
+# Extract results for Human Tissue vs. Malignant Tissue
+res <- results(dds, contrast = c("Source", "Human NSCLC tissue", "Human non-malignant tissue" ))
 
 # Filter for genes with padj < 0.01 (statistically significant) and log2FoldChange > 1 or < -1 (biologically meaningful)
 deg_genes <- res[which(res$padj < 0.01 & abs(res$log2FoldChange) > 1), ]
@@ -275,7 +275,7 @@ plot_volcano(res_ex_vs_current, "Volcano plot Ex vs Current Smokers")
 # 1. change variables from characters to factors for 'histology' 
 
 # Function to get the results for smoking
-DSQ2("Histology", "Control")
+DSQ2("Histology", "Control", raw_counts, metadata.subset)
 
 metadata.subset$Histology <- as.factor(metadata.subset$Histology)
 
@@ -331,7 +331,7 @@ write.table(DEGs_control_vs_LC, file= "DEGs_control_vs_LC.tsv", sep = "\t", col.
 # 1. change variables from chracters to factors for sex
 
 # New function
-DSQ2("Sex", "male")
+DSQ2("Sex", "male", raw_counts, metadata.subset)
 
 metadata.subset$Sex <- as.factor(metadata.subset$Sex)
 
@@ -364,7 +364,7 @@ write.table(DEGs_male_vs_female, file= "DEGs_male_vs_female.tsv", sep = "\t", co
 # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-=
 # DESeq2 for performance 
 
-DSQ2("Performance", "0")
+DSQ2("Performance", "0", raw_counts, metadata.subset)
 
 # 1. change variables from chracters to factors for performance
 metadata.subset$Performance <- as.factor(metadata.subset$Performance)
@@ -389,7 +389,7 @@ dds_performance <- DESeq(dds_performance)
 # 9. Making a plot 
 
 # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-=
-# DESeq2 for age
+# DESeq2 for Age
 
 # Sort the dataset by Age
 colData <- metadata.subset %>% arrange(Age)
@@ -398,19 +398,26 @@ colData <- metadata.subset %>% arrange(Age)
 colData$Age <- as.numeric(colData$Age)
 
 # Find the minimum and maximum ages
+# Find the minimum and maximum ages
 min_age <- min(colData$Age, na.rm = TRUE)  # Ensure NA values don't break it
 max_age <- max(colData$Age, na.rm = TRUE)
 
 # Filter for people within the youngest and oldest 10 year age range
-youngest <- colData %>% filter(Age <= (min_age + 10))
-oldest <- colData %>% filter(Age >= (max_age - 10))
+youngest <- colData %>% filter(Age <= (min_age + 13))
+middle <- colData %>% filter(Age <= (min_age + 26))
+oldest <- colData %>% filter(Age >= (max_age - 12))
 
 # Combine the selected groups
-selected_samples <- bind_rows(youngest, oldest)
+selected_samples <- bind_rows(youngest, middle, oldest)
 
 # Convert Age into categorical variable
-selected_samples$AgeGroup <- ifelse(selected_samples$Age <= (min_age + 10), "Young", "Old")
-selected_samples$AgeGroup <- factor(selected_samples$AgeGroup, levels = c("Young", "Old"))
+selected_samples$AgeGroup <- case_when(
+  selected_samples$Age <= (min(selected_samples$Age) + 13) ~ "Young",
+  selected_samples$Age > (min(selected_samples$Age) + 13) & selected_samples$Age <= (max(selected_samples$Age) - 13) ~ "Middle",
+  TRUE ~ "Old"  # Default case for remaining values
+)
+
+selected_samples <- selected_samples[!duplicated(selected_samples$Sample), ]
 
 # Raw counts have to be adjusted
 RCA <- raw_counts[, colnames(raw_counts) %in% selected_samples$Sample]
@@ -422,37 +429,7 @@ rownames(selected_samples) <- selected_samples$Sample
 selected_samples <- selected_samples[colnames(RCA), ]
 
 # function to analyse the rest automatically
-DSQ2("AgeGroup", "Young", RCA, selected_samples)
-
-# Subset count data to include only selected samples
-RCA_subset <- raw_counts[, rownames(selected_samples)]
-
-# Create DESeq2 dataset
-dds_age <- DESeqDataSetFromMatrix(countData = RCA_subset,
-                              colData = selected_samples,
-                              design = ~ AgeGroup)
-
-# 3. Quality control - Remove genes with low counts
-keep <- rowMeans(counts(dds_age)) >=10
-dds_age <- dds_age[keep,]
-
-# Run DESeq2
-dds <- DESeq(dds)
-
-# Get results comparing Old vs. Young
-res <- results(dds, contrast = c("AgeGroup", "Old", "Young"))
-
-# View top differentially expressed genes
-resOrdered <- res[order(res$padj), ]
-head(resOrdered)
-
-# 4. Set '45 = youngest age' as the Reference ???
-
-# 5. Run DESeq2
-# 6. Extract DEGs for groups:
-# 7. Extract DEGs within each comparison individually
-# 8. Save to TSV
-# 9. Making a plot 
+DSQ2("AgeGroup", "Old", RCA, selected_samples)
 
 # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-=
 # DESeq 2 for tumor stage - Sabya
@@ -584,10 +561,90 @@ plot_volcano(res_3_vs_1, "Stage 3 vs Stage 1")
 plot_volcano(res_3_vs_2, "Stage 3 vs Stage 2")
 
 # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-=
-  # Step 3. GO
+#HEALTHY TISSUES
+#DESEQ2
 
-# Bart his code (do we still need this?)
-heatmap_plot(raw_counts, "sex", DEGs_male_vs_female)
+# Becasue samples were only 19 and data was compromised (NA instead of actual data),we created a healhty data frame manually
+
+healthy_metadata <- data.frame(
+  sample = c("L511N", "L532N", "L561N", "L563N", "L566N", "L572N", "L606N", "L616N", "L644N", "L656N", "L661N",
+             "L682N", "L723N", "L724N", "L736N",  "L738N",  "L809N", "L831N", "L881N"),  
+  
+  age = c(56, 69, 62,61, 58, 58, 55, 54, 67, 58, 66, 64, 67, 67, 67, 74, 72, 62, 70),
+  
+  Sex = c("female", "female", "female", "female", "male", "male", "male", "male", "male", 
+          "male", "male", "female", "male", "female", "male", "female", "male", "female", "male")
+)
+
+rownames(healthy_metadata) <- healthy_metadata$sample
+
+# Convert Age to numeric for classification
+healthy_metadata$age <- as.numeric(as.character(healthy_metadata$age))
+
+# Apply Age Group classification
+healthy_metadata$Age <- case_when(
+  healthy_metadata$age <= 58 ~ "Young",
+  healthy_metadata$age >= 72 ~ "Old",
+  TRUE ~ "Middle"
+)
+
+# Convert AgeGroup to a factor
+healthy_metadata$age <- factor(healthy_metadata$Age, levels = c("Young", "Middle", "Old"))
+
+# Filter raw_counts to include only the healthy samples
+healthy_counts <- raw_counts[, rownames(healthy_metadata)]
+
+# Check if sample matching worked
+all(colnames(healthy_counts) == rownames(healthy_metadata))
+
+DSQ2("Age", "Old", healthy_counts, healthy_metadata)
+
+
+
+# Make sure the gender column is a factor
+healthy_metadata$Sex <- as.factor(healthy_metadata$Sex)
+
+# Create DESeq2 dataset for healthy samples only
+dds_healthy_sex <- DESeqDataSetFromMatrix(
+  countData = healthy_counts,
+  colData = healthy_metadata,
+  design = ~ Sex
+)
+
+# Filter low counts
+keep <- rowMeans(counts(dds_healthy_sex)) >= 10
+dds_healthy_sex <- dds_healthy_sex[keep, ]
+
+# Set reference level
+dds_healthy_sex$Sex <- relevel(dds_healthy_sex$Sex, ref = "female")  # Choose your reference
+
+# Run DESeq
+dds_healthy_sex <- DESeq(dds_healthy_sex)
+
+# Extract results
+res_healthy_sex <- results(dds_healthy_sex, contrast = c("Sex", "male", "female"))
+
+# Extract significant DEGs
+DEGs_healthy_sex <- res_healthy_sex[which(res_healthy_sex$padj < 0.01 & abs(res_healthy_sex$log2FoldChange) > 1), ]
+
+# Convert to data frame and order by fold change
+k_healthy <- as.data.frame(DEGs_healthy_sex)
+orderedDEGs_healthy_sex <- k_healthy[order(k_healthy$log2FoldChange, decreasing = TRUE), ]
+
+# View top DE genes
+head(orderedDEGs_healthy_sex)
+
+# Save results
+write.table(DEGs_healthy_sex, file= "DEGs_healthy_sex.tsv", sep = "\t", col.names = F)
+write_xlsx(DEGs_healthy_sex, path = "DEGs_healthy_sex.xlsx")
+
+#comparison cancer and healthy genes 
+
+# Get the gene lists from both datasets
+healthy_sex_genes <- rownames(DEGs_healthy_sex)
+cancer_sex_genes <- rownames(DEGs_male_vs_female)  
+# Find overlapping genes
+common_genes <- intersect(healthy_sex_genes, cancer_sex_genes)
 
 # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-=
 # Step 3. GO, heatmap of DEGs in NSCLC samples vs non malignant samples, sig. associated with ....
@@ -625,12 +682,15 @@ annotation_col <- data.frame(Type = factor(sample_types, levels = c("Normal", "T
 rownames(annotation_col) <- colnames(log_overlap_moetgenessource)
 
 # Plot the heatmap
-pheatmap(log_overlap_moetgenessource, 
-         cluster_rows = TRUE, 
-         cluster_cols = TRUE, 
-         scale = "row",
-         show_rownames = TRUE, 
-         show_colnames = TRUE, 
-         annotation_col = annotation_col,  # Highlight Tumor vs. Normal
-         gaps_col = length(grep("N$", colnames(log_overlap_moetgenessource))), # Add gap between groups
-         main = "Heatmap of MOET Genes (Normal vs. Tumor)")
+save.pdf(function(){
+  pheatmap(log_overlap_moetgenessource, 
+           cluster_rows = TRUE, 
+           cluster_cols = TRUE, 
+           scale = "row",
+           show_rownames = TRUE, 
+           show_colnames = TRUE, 
+           annotation_col = annotation_col,  # Highlight Tumor vs. Normal
+           gaps_col = length(grep("N$", colnames(log_overlap_moetgenessource))), # Add gap between groups
+           main = "Heatmap of MOET Genes (Normal vs. Tumor)")
+}, "Heatmap of MOET Genes (Normal vs. Tumor)")
+
