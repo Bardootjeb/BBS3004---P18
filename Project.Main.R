@@ -45,7 +45,7 @@ metadata <- pData(phenoData(gse[[1]]))
 # Create subset
 metadata.subset <- metadata[, c(1, 8, 48, 49, 50, 51, 52, 53, 54, 56)]
 
-# Renaming the colnames to the appropriate names to make it more readable
+# Renaming the colnames of the metadata.subset to make it more readable
 metadata.subset <- setNames(metadata.subset, c(
   "Title", "Source", "Age", "Life_Status", "Sex", "Histology", "Performance", 
   "Smoking_Status", "Tumor_stage", "Sample"
@@ -192,7 +192,7 @@ nrow(deg_genes)
 # Save results to a TSV file for further analysis
 write.table(deg_genes, file= "Significant_DEGs.tsv", sep = "\t", col.names = F)
 
-#making plots
+#[making plot for the tumor vs normal tissue]
 
 # Convert results to a dataframe
 res_df <- as.data.frame(res)
@@ -230,12 +230,11 @@ metadata.subset<- metadata.subset%>%
 
 # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-=
 # DESeq2 for smoking - Anne fleur
-# 1. change variables from chracters to factors for 'smoking status' (or gender etc.) 
 
 # Function to get the results for smoking
 DSQ2("Smoking_Status", 3, raw_counts, metadata.subset)
 
- ## The function makes the rest of the code obsolete
+# 1. change variables from chracters to factors for 'smoking status' (or gender etc.) 
 metadata.subset$Smoking_Status <- as.factor(metadata.subset$Smoking_Status)
 
 # 2. Construct a DESeqDataSet object
@@ -272,11 +271,11 @@ plot_volcano(res_ex_vs_current, "Volcano plot Ex vs Current Smokers")
 
 # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-=
 # DESeq 2 for histology - Silke
-# 1. change variables from characters to factors for 'histology' 
 
-# Function to get the results for smoking
+# Function to get the results for histology
 DSQ2("Histology", "Control", raw_counts, metadata.subset)
 
+# 1. change variables from characters to factors for 'histology' 
 metadata.subset$Histology <- as.factor(metadata.subset$Histology)
 
 # 2. Construct a DESeqDataSet object
@@ -317,22 +316,14 @@ write.table(DEGs_control_vs_SC, file= "DEGs_control_vs_SC.tsv", sep = "\t", col.
 write.table(DEGs_control_vs_AC, file= "DEGs_control_vs_AC.tsv", sep = "\t", col.names = F)
 write.table(DEGs_control_vs_LC, file= "DEGs_control_vs_LC.tsv", sep = "\t", col.names = F)
 
-# 9. Making a plot 
-
-# 8. Save to TSV
-write.table(DEGs_control_vs_SC, file= "DEGs_control_vs_SC.tsv", sep = "\t", col.names = F)
-write.table(DEGs_control_vs_AC, file= "DEGs_control_vs_AC.tsv", sep = "\t", col.names = F)
-write.table(DEGs_control_vs_LC, file= "DEGs_control_vs_LC.tsv", sep = "\t", col.names = F)
-
-# 9. Making a plot 
 
 # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-=
 # DESeq2 for sex
-# 1. change variables from chracters to factors for sex
 
-# New function
+# function for DESeq2 results for sex
 DSQ2("Sex", "male", raw_counts, metadata.subset)
 
+# 1. change variables from chracters to factors for sex
 metadata.subset$Sex <- as.factor(metadata.subset$Sex)
 
 # 2. Construct a DESeqDataSet object
@@ -359,11 +350,11 @@ DEGs_male_vs_female <- res_male_vs_female[which(res_male_vs_female$padj < 0.01 &
 # 8. Save to TSV
 write.table(DEGs_male_vs_female, file= "DEGs_male_vs_female.tsv", sep = "\t", col.names = F)
 
-# 9. Making a plot 
 
 # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-=
 # DESeq2 for performance 
 
+#function to get results for performance
 DSQ2("Performance", "0", raw_counts, metadata.subset)
 
 # 1. change variables from chracters to factors for performance
@@ -383,11 +374,6 @@ dds_performance$Performance <- relevel(dds_performance$Performance, ref = "0")
 # 5. Run DESeq2
 dds_performance <- DESeq(dds_performance)
 
-# 6. Extract DEGs for groups:
-# 7. Extract DEGs within each comparison individually
-# 8. Save to TSV
-# 9. Making a plot 
-
 # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-=
 # DESeq2 for Age
 
@@ -397,7 +383,6 @@ colData <- metadata.subset %>% arrange(Age)
 # Assign variables as numeric
 colData$Age <- as.numeric(colData$Age)
 
-# Find the minimum and maximum ages
 # Find the minimum and maximum ages
 min_age <- min(colData$Age, na.rm = TRUE)  # Ensure NA values don't break it
 max_age <- max(colData$Age, na.rm = TRUE)
@@ -469,34 +454,40 @@ dds_Tumorstage$Tumor_stage <- relevel(dds_Tumorstage$Tumor_stage, ref = "Control
 dds_Tumorstage <- DESeq(dds_Tumorstage) 
 
 # Step 9. Extract DEGs for all stages
-res_control_vs_stage1 <- results(dds_Tumorstage, contrast = c ("Tumor_stage", "Control", "1"))
-res_control_vs_stage2 <- results(dds_Tumorstage, contrast = c ("Tumor_stage", "Control", "2"))
-res_control_vs_stage3 <- results(dds_Tumorstage, contrast = c ("Tumor_stage", "Control", "3"))
+res_1_vs_control <- results(dds_Tumorstage, contrast = c ("Tumor_stage", "1", "Control"))
+res_2_vs_control <- results(dds_Tumorstage, contrast = c ("Tumor_stage", "2", "Control"))
+res_3_vs_control <- results(dds_Tumorstage, contrast = c ("Tumor_stage", "3", "Control"))
 
 
 # Step 10. Extract DEGs within each comparison individually
-DEGs_control_vs_stage1 <- res_control_vs_stage1[which(res_control_vs_stage1$padj < 0.01 & abs(res_control_vs_stage1$log2FoldChange) > 1), ]
-DEGs_control_vs_stage2 <- res_control_vs_stage2[which(res_control_vs_stage2$padj < 0.01 & abs(res_control_vs_stage2$log2FoldChange) > 1), ]
-DEGs_control_vs_stage3 <- res_control_vs_stage3[which(res_control_vs_stage3$padj < 0.01 & abs(res_control_vs_stage3$log2FoldChange) > 1), ]
+DEGs_1_vs_control <- res_1_vs_control[which(res_1_vs_control$padj < 0.01 & abs(res_1_vs_control$log2FoldChange) > 1), ]
+DEGs_2_vs_control <- res_2_vs_control[which(res_2_vs_control$padj < 0.01 & abs(res_2_vs_control$log2FoldChange) > 1), ]
+DEGs_3_vs_control <- res_3_vs_control[which(res_3_vs_control$padj < 0.01 & abs(res_3_vs_control$log2FoldChange) > 1), ]
 
 
 # Step 11. Check how many significant DEGs were found
-nrow(DEGs_control_vs_stage1)
-nrow(DEGs_control_vs_stage2)
-nrow(DEGs_control_vs_stage3)
+nrow(DEGs_1_vs_control)
+nrow(DEGs_2_vs_control)
+nrow(DEGs_3_vs_control)
 
 
 # step 12. Save DEG list
-write.table(rownames(DEGs_control_vs_stage1), "DEGs_control_vs_stage1.csv", sep = "\t", quote = FALSE, row.names = FALSE, col.names = FALSE)
-write.table(rownames(DEGs_control_vs_stage2), "DEGs_control_vs_stage2.csv", sep = "\t", quote = FALSE, row.names = FALSE, col.names = FALSE)
-write.table(rownames(DEGs_control_vs_stage3), "DEGs_control_vs_stage3.csv", sep = "\t", quote = FALSE, row.names = FALSE, col.names = FALSE)
+write.csv(DEGs_1_vs_control,
+          file = "DEGs_1_vs_control.csv",
+          row.names = TRUE)
+write.csv(DEGs_2_vs_control,
+          file = "DEGs_2_vs_control.csv",
+          row.names = TRUE)
+write.csv(DEGs_3_vs_control,
+          file = "DEGs_3_vs_control.csv",
+          row.names = TRUE)
 
-#making plots
-plot_volcano(res_control_vs_stage1, "control vs Stage 1")
-plot_volcano(res_control_vs_stage2, "control vs Stage 2")
-plot_volcano(res_control_vs_stage3, "control vs Stage 3")
+# step 13. making plots with a function
+plot_volcano(res_1_vs_control, "Stage 1 vs control")
+plot_volcano(res_2_vs_control, "Stage 2 vs control")
+plot_volcano(res_3_vs_control, "Stage 3 vs control")
 
-#comparison within tumorstages only 
+#[comparison within tumorstages only]
 
 # Subset metadata and counts to tumor stages only (1, 2, 3)
 metadata_tumorOnly <- metadata.subset[metadata.subset$Tumor_stage %in% c("1", "2", "3"), ]
