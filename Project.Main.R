@@ -186,9 +186,6 @@ res <- results(dds, contrast = c("Source", "Human NSCLC tissue", "Human non-mali
 # Filter for genes with padj < 0.01 (statistically significant) and log2FoldChange > 1 or < -1 (biologically meaningful)
 deg_genes <- res[which(res$padj < 0.01 & abs(res$log2FoldChange) > 1), ]
 
-# Check how many significant DEGs were found
-nrow(deg_genes)
-
 # Save results to a TSV file for further analysis
 write.table(deg_genes, file= "Significant_DEGs.tsv", sep = "\t", col.names = F)
 
@@ -398,13 +395,12 @@ colData <- metadata.subset %>% arrange(Age)
 colData$Age <- as.numeric(colData$Age)
 
 # Find the minimum and maximum ages
-# Find the minimum and maximum ages
 min_age <- min(colData$Age, na.rm = TRUE)  # Ensure NA values don't break it
 max_age <- max(colData$Age, na.rm = TRUE)
 
 # Filter for people within the youngest and oldest 10 year age range
 youngest <- colData %>% filter(Age <= (min_age + 13))
-middle <- colData %>% filter(Age <= (min_age + 26))
+middle <- colData %>% filter(Age > (min_age + 13) & Age < (max_age - 12))
 oldest <- colData %>% filter(Age >= (max_age - 12))
 
 # Combine the selected groups
@@ -430,6 +426,62 @@ selected_samples <- selected_samples[colnames(RCA), ]
 
 # function to analyse the rest automatically
 DSQ2("AgeGroup", "Old", RCA, selected_samples)
+
+save.pdf(function(){
+# Age distribution of NSCLC samples
+ggplot(colData, aes(x = Age, fill = AgeGroup)) +
+  geom_histogram(binwidth = 5, color = "black", alpha = 0.5, position = "identity") +
+  scale_fill_manual(values = c("Youngest" = "blue", "Middle" = "green", "Oldest" = "red")) +
+  labs(title = "Age Distribution of NSCLC Samples",
+       x = "Age",
+       y = "Count",
+       fill = "Age Group") +
+  theme_minimal()
+}, "Age Distribution NSCLC Samples")
+
+#GRP, CHGA, ABCC2, THBD
+ensembl_ids <- c("ENSG00000134443", "ENSG00000100604", "ENSG00000023839", "ENSG00000178726") # Add your full list here
+
+# extract old vs young data
+OldvsYoung <- read.delim("AgeGroup_Old_vs_Young.tsv", header=TRUE, 
+                        row.names=1, sep="\t", check.names=FALSE)
+
+
+# Filter the results table for only these Ensembl IDs
+filtered_results <- OldvsYoung[rownames(OldvsYoung) %in% ensembl_ids, ]
+
+# Classify genes as Upregulated, Downregulated, or Not Significant
+filtered_results$Significance <- case_when(
+  filtered_results$padj < 0.05 & filtered_results$log2FoldChange > 1  ~ "Upregulated",
+  filtered_results$padj < 0.05 & filtered_results$log2FoldChange < -1 ~ "Downregulated",
+  TRUE ~ "Not significant"
+)
+
+# Ensure log2FoldChange is numeric
+filtered_results$log2FoldChange <- as.numeric(filtered_results$log2FoldChange)
+
+# Remove any rows with NA values after conversion
+filtered_results <- na.omit(filtered_results)
+
+# Create a numeric matrix with row names as Gene IDs
+gene_expression_matrix <- matrix(
+  filtered_results$log2FoldChange, 
+  nrow = nrow(filtered_results), 
+  dimnames = list(rownames(filtered_results), "log2FoldChange")
+)
+
+# Check if all values are numeric
+print(str(gene_expression_matrix))  # This should return "num"
+
+# Create a heatmap
+pheatmap(
+  gene_expression_matrix, 
+  cluster_rows = TRUE, 
+  cluster_cols = FALSE, 
+  color = colorRampPalette(c("blue", "white", "red"))(100),
+  main = "Expression of Selected Genes in NSCLC"
+)
+
 
 # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-=
 # DESeq 2 for tumor stage - Sabya
@@ -570,7 +622,7 @@ healthy_metadata <- data.frame(
   sample = c("L511N", "L532N", "L561N", "L563N", "L566N", "L572N", "L606N", "L616N", "L644N", "L656N", "L661N",
              "L682N", "L723N", "L724N", "L736N",  "L738N",  "L809N", "L831N", "L881N"),  
   
-  age = c(56, 69, 62,61, 58, 58, 55, 54, 67, 58, 66, 64, 67, 67, 67, 74, 72, 62, 70),
+  Years = c(56, 69, 62,61, 58, 58, 55, 54, 67, 58, 66, 64, 67, 67, 67, 74, 72, 62, 70),
   
   Sex = c("female", "female", "female", "female", "male", "male", "male", "male", "male", 
           "male", "male", "female", "male", "female", "male", "female", "male", "female", "male")
@@ -578,18 +630,18 @@ healthy_metadata <- data.frame(
 
 rownames(healthy_metadata) <- healthy_metadata$sample
 
-# Convert Age to numeric for classification
-healthy_metadata$age <- as.numeric(as.character(healthy_metadata$age))
+# Convert Years to numeric for classification
+healthy_metadata$Years <- as.numeric(as.character(healthy_metadata$Years))
 
-# Apply Age Group classification
-healthy_metadata$Age <- case_when(
-  healthy_metadata$age <= 58 ~ "Young",
-  healthy_metadata$age >= 72 ~ "Old",
+# Apply Year Group classification
+healthy_metadata$YearGroup <- case_when(
+  healthy_metadata$Years <= 58 ~ "Young",
+  healthy_metadata$Years >= 72 ~ "Old",
   TRUE ~ "Middle"
 )
 
-# Convert AgeGroup to a factor
-healthy_metadata$age <- factor(healthy_metadata$Age, levels = c("Young", "Middle", "Old"))
+# Convert YearGroup to a factor
+healthy_metadata$YearGroup <- factor(healthy_metadata$YearGroup, levels = c("Young", "Middle", "Old"))
 
 # Filter raw_counts to include only the healthy samples
 healthy_counts <- raw_counts[, rownames(healthy_metadata)]
@@ -597,9 +649,77 @@ healthy_counts <- raw_counts[, rownames(healthy_metadata)]
 # Check if sample matching worked
 all(colnames(healthy_counts) == rownames(healthy_metadata))
 
-DSQ2("Age", "Old", healthy_counts, healthy_metadata)
+DSQ2("YearGroup", "Old", healthy_counts, healthy_metadata)
+
+save.pdf(function(){
+# Plot the histogram for healthy data with 'Years' as the x-axis
+ggplot(healthy_metadata, aes(x = Years, fill = YearGroup)) +
+  geom_histogram(binwidth = 3, color = "black", alpha = 0.5, position = "identity") +  # Adjust binwidth if needed
+  scale_fill_manual(values = c("Young" = "blue", "Middle" = "green", "Old" = "red")) +
+  labs(title = "Age Distribution of Healthy Samples",
+       x = "Years",
+       y = "Count",
+       fill = "Year Group") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))  # Rotate x-axis labels for better readability
+}, "Age Distribution Healthy Samples")
 
 
+# Step 1: Extract Gene Expression for Selected Genes
+selected_genes <- rownames(filtered_results)  # Extract ENSG IDs from filtered results
+gene_expression <- raw_counts[rownames(raw_counts) %in% selected_genes, ]
+
+# Step 2: Normalize Expression (log2 + 1 transformation)
+log_gene_expression <- log2(as.matrix(gene_expression) + 1)
+
+# Step 3: Split Data into Healthy & Disease Groups
+# Order columns for Healthy: Young -> Middle -> Old
+healthy_samples <- selected_samples$Sample
+healthy_expression <- log_gene_expression[, colnames(log_gene_expression) %in% healthy_samples]
+healthy_expression <- healthy_expression[, selected_samples$Sample]  # Ensure proper order
+
+# Order columns for Disease: Normal -> Tumor
+disease_samples <- colnames(log_gene_expression)[!colnames(log_gene_expression) %in% healthy_samples]
+disease_expression <- log_gene_expression[, disease_samples]
+
+# Step 4: Create Column Annotations
+# Healthy Annotation (Age Groups)
+annotation_healthy <- data.frame(AgeGroup = selected_samples$AgeGroup)
+rownames(annotation_healthy) <- selected_samples$Sample
+
+# Disease Annotation (Tumor vs. Normal)
+sample_types <- ifelse(grepl("T$", colnames(disease_expression)), "Tumor", "Normal")
+annotation_disease <- data.frame(Type = factor(sample_types, levels = c("Normal", "Tumor")))
+rownames(annotation_disease) <- colnames(disease_expression)
+
+# Step 5: Merge & Order Data
+ordered_columns <- c(colnames(healthy_expression), colnames(disease_expression))
+final_expression_matrix <- log_gene_expression[, ordered_columns]
+
+# Make sure both annotation data frames have the same column name
+colnames(annotation_healthy) <- "Type"  # For example, healthy samples are labeled as 'Type'
+colnames(annotation_disease) <- "Type"  # Ensure disease samples have the same column name
+
+# Ensure row names (Sample IDs) match between annotation and expression data
+rownames(annotation_healthy) <- selected_samples$Sample  # Use the correct sample names for healthy data
+rownames(annotation_disease) <- colnames(disease_expression)  # Ensure disease sample names match
+
+# Now you can bind them safely (annotation_healthy + annotation_disease)
+annotation_col <- rbind(annotation_healthy, annotation_disease)
+
+# Now you can create the heatmap
+pheatmap(final_expression_matrix, 
+         cluster_rows = TRUE, 
+         cluster_cols = TRUE, 
+         scale = "row", 
+         show_rownames = TRUE, 
+         show_colnames = TRUE, 
+         annotation_col = annotation_col,  # Apply the combined annotation
+         gaps_col = length(colnames(healthy_expression)),  # Add gap between healthy and disease
+         main = "Heatmap of Selected Genes (Healthy vs. Disease)")
+
+
+# Sex
 
 # Make sure the gender column is a factor
 healthy_metadata$Sex <- as.factor(healthy_metadata$Sex)
@@ -682,8 +802,7 @@ annotation_col <- data.frame(Type = factor(sample_types, levels = c("Normal", "T
 rownames(annotation_col) <- colnames(log_overlap_moetgenessource)
 
 # Plot the heatmap
-save.pdf(function(){
-  pheatmap(log_overlap_moetgenessource, 
+pheatmap(log_overlap_moetgenessource, 
            cluster_rows = TRUE, 
            cluster_cols = TRUE, 
            scale = "row",
@@ -692,5 +811,4 @@ save.pdf(function(){
            annotation_col = annotation_col,  # Highlight Tumor vs. Normal
            gaps_col = length(grep("N$", colnames(log_overlap_moetgenessource))), # Add gap between groups
            main = "Heatmap of MOET Genes (Normal vs. Tumor)")
-}, "Heatmap of MOET Genes (Normal vs. Tumor)")
 
