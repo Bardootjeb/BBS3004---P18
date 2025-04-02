@@ -443,32 +443,6 @@ filtered_results$Significance <- case_when(
   TRUE ~ "Not significant"
 )
 
-# Ensure log2FoldChange is numeric
-filtered_results$log2FoldChange <- as.numeric(filtered_results$log2FoldChange)
-
-# Remove any rows with NA values after conversion
-filtered_results <- na.omit(filtered_results)
-
-# Create a numeric matrix with row names as Gene IDs
-gene_expression_matrix <- matrix(
-  filtered_results$log2FoldChange, 
-  nrow = nrow(filtered_results), 
-  dimnames = list(rownames(filtered_results), "log2FoldChange")
-)
-
-# Check if all values are numeric
-print(str(gene_expression_matrix))  # This should return "num"
-
-# Create a heatmap
-pheatmap(
-  gene_expression_matrix, 
-  cluster_rows = TRUE, 
-  cluster_cols = FALSE, 
-  color = colorRampPalette(c("blue", "white", "red"))(100),
-  main = "Expression of Selected Genes in NSCLC"
-)
-
-
 # =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-==-=-=-=-=-=-=
 # DESeq 2 for tumor stage - Sabya
 # Step 1: Convert to character (just to avoid factor issues)
@@ -709,6 +683,7 @@ pheatmap(final_expression_matrix,
          annotation_col = annotation_col,  # Apply the combined annotation
          gaps_col = length(colnames(healthy_expression)),  # Add gap between healthy and disease
          main = "Heatmap of Selected Genes (Healthy vs. Disease)")
+
 
 
 # Sex

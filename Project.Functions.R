@@ -72,7 +72,6 @@ DSQ2 <- function(variable, ref_level, countdata, metadata){
 #=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 
 # Function to create a volcano plot of the degs
-
 plot_volcano <- function(res, title) {
   save.pdf(function(){
   res_df <- as.data.frame(res)
